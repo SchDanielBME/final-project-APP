@@ -27,10 +27,9 @@ public class HeadLocation : MonoBehaviour
         public float ErrorTime { get; private set; }
 
 
-        public PoseEventArgs(Vector3 startPosition, Vector3 endPosition, float angleResult, float elapsedTime,float time, float angleError)
+        public PoseEventArgs(Vector3 startPosition, float angleResult, float elapsedTime,float time, float angleError)
         {
             StartPosition = startPosition;
-            EndPosition = endPosition;
             Result = angleResult;
             ElapsedTime = elapsedTime;
             Time = time;
@@ -72,7 +71,7 @@ public class HeadLocation : MonoBehaviour
         }
         angleError = Mathf.Abs(angle - realAngleInXZPlane);
 
-        OnPoseCaptured?.Invoke(this, new PoseEventArgs(startPosition, endPosition, realAngleInXZPlane, elapsedTime, startTime, angleError));
+        OnPoseCaptured?.Invoke(this, new PoseEventArgs(startPosition, realAngleInXZPlane, elapsedTime, startTime, angleError));
         startTime = 0;
         endTime = 0;
     }

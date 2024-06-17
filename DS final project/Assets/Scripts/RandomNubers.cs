@@ -6,14 +6,18 @@ using UnityEngine;
 
 public class RandomNubers : MonoBehaviour
 {
-    private int[] order = { 1, 2, 3 };
+    private int[] order = { 1, 2, 3, 4 };
     [SerializeField] private int first = 0;
     [SerializeField] private int second = 0;
     [SerializeField] private int third = 0;
+    [SerializeField] private int fourth = 0;
 
-    [SerializeField] private int[] firstAnglesOrder = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    [SerializeField] private int[] secondAnglesOrder = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-    [SerializeField] private int[] thirdAnglesOrder = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+    [SerializeField] private int[] firstAnglesOrder = { 1, 2, 3, 4, 5, 6};
+    [SerializeField] private int[] secondAnglesOrder = { 1, 2, 3, 4, 5, 6};
+    [SerializeField] private int[] thirdAnglesOrder = {1, 2, 3, 4, 5, 6};
+    [SerializeField] private int[] fourthAnglesOrder = { 1, 2, 3, 4, 5, 6 };
+
 
     public event EventHandler<ScenesEventArgs> OnGenerateScenes;
     public class ScenesEventArgs : EventArgs
@@ -32,13 +36,16 @@ public class RandomNubers : MonoBehaviour
         public int[] FirstAngles { get; }
         public int[] SecondAngles { get; }
         public int[] ThirdAngles { get; }
+        public int[] FourthAngles { get; }
 
 
-        public AngelsEventArgs(int[] firstAnglesOrder, int[] secondAnglesOrder, int[] thirdAnglesOrder)
+
+        public AngelsEventArgs(int[] firstAnglesOrder, int[] secondAnglesOrder, int[] thirdAnglesOrder, int[] fourthAngles)
         {
             FirstAngles = firstAnglesOrder;
             SecondAngles = secondAnglesOrder;
             ThirdAngles = thirdAnglesOrder;
+            FourthAngles = fourthAngles;
         }
     }
 
@@ -49,12 +56,14 @@ public class RandomNubers : MonoBehaviour
         ShuffleArry(firstAnglesOrder);
         ShuffleArry(secondAnglesOrder);
         ShuffleArry(thirdAnglesOrder);
+        ShuffleArry(fourthAnglesOrder);
 
         first = order[0];
         second = order[1];
         third = order[2];
+        fourth = order[3];
 
-        OnGenerateAngles?.Invoke(this, new AngelsEventArgs(firstAnglesOrder, secondAnglesOrder, thirdAnglesOrder));
+        OnGenerateAngles?.Invoke(this, new AngelsEventArgs(firstAnglesOrder, secondAnglesOrder, thirdAnglesOrder, fourthAnglesOrder));
         OnGenerateScenes?.Invoke(this, new ScenesEventArgs(order));
     
     }
