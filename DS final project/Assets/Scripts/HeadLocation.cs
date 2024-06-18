@@ -3,14 +3,15 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 public class HeadLocation : MonoBehaviour
 {
     [SerializeField] private GameObject data;
-    public event EventHandler OnSaveStartLoction;
     public event EventHandler<PoseEventArgs> OnPoseCaptured;
     public event EventHandler OnSaveEndLoction;
     private Vector3 startPosition;
     private Vector3 endPosition;
+    private float StartAngle; 
     private float startTime;
     private float endTime;
     private float realAngleInXZPlane;
@@ -36,11 +37,14 @@ public class HeadLocation : MonoBehaviour
             ErrorTime = angleError;
         }
     }
+    
+
     void Start()
     {
         Data dataInfo = data.GetComponent<Data>();
         if (dataInfo != null)
         {
+            dataInfo.AskForStartAngle += TakeStartPose;
             dataInfo.OnTaskButtonClicked += TakeStartPose;
             dataInfo.OnStopButtonClicked += TakeEndPose;
             dataInfo.OnCurentAngle += GetCurentAngle; ;
@@ -51,9 +55,22 @@ public class HeadLocation : MonoBehaviour
     {
         startPosition = Camera.main.transform.forward;
         startTime = Time.time;
-        OnSaveStartLoction?.Invoke(this, EventArgs.Empty);
+        StartAngle = AngleFromVector(Vector3.zero, startPosition);
+        Data.startAngle = StartAngle;
     }
 
+    private float AngleFromVector(Vector3 direction1, Vector3 direction2)
+    {
+        direction1.y = 0;
+        direction2.y = 0;
+        float AngleInXZPlane = Vector3.SignedAngle(direction1, direction2, Vector3.up);
+
+        if (AngleInXZPlane < 0)
+        {
+            AngleInXZPlane += 360;
+        }
+        return AngleInXZPlane;
+    }
     private void TakeEndPose(object sender, EventArgs e)
     {
         endPosition = Camera.main.transform.forward;

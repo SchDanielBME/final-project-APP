@@ -5,15 +5,13 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static UnityEngine.Rendering.DebugUI;
 
 public class Data : MonoBehaviour
 {
     private int[] angels = { 280, 290, 300, 310, 320, 330 };
     private string[] direction = { "right", "right", "right", "left", "left", "left" };
-    [SerializeField] private List<TableRow> R0_Data = new List<TableRow>();
-    [SerializeField] private List<TableRow> R1_Data = new List<TableRow>();
-    [SerializeField] private List<TableRow> S0_Data = new List<TableRow>();
-    [SerializeField] private List<TableRow> S1_Data = new List<TableRow>();
+    [SerializeField] private List<TableRow> DataTable = new List<TableRow>();
 
 
     private int[] FirstAngles;
@@ -25,15 +23,17 @@ public class Data : MonoBehaviour
     private int[] NowAngles;
     [SerializeField] private int[] current = { 0, 0 };
     private string[] ScenesNames = { "R0", "R1", "S0", "S1" };
+    private string currentScreneName;
     private DateTime startTime;
     private string outputFileName;
+    private string filePath;
 
     [SerializeField] private GameObject numberRandomizer;
-    [SerializeField] private GameObject taskPanel;
     [SerializeField] private GameObject headLocation;
     [SerializeField] private GameObject thanksPanel;
-    [SerializeField] private TextMeshProUGUI taskText;
-    [SerializeField] private Button taskButton;
+    [SerializeField] private GameObject newScrenePanel;
+    [SerializeField] private TextMeshProUGUI ScreneText;
+    [SerializeField] private Button ScreneButton;
     [SerializeField] private GameObject stopPanel;
     [SerializeField] private Button stopButton;
     [SerializeField] private Button thanksButton;
@@ -42,10 +42,10 @@ public class Data : MonoBehaviour
 
     [SerializeField] private int currentAngleIndex = 0;
     [SerializeField] private int currentSceneIndex = 0;
-    float startAngle = 0;
+    public static float startAngle = 0;
     float tempButterAngle = 0;
     float tempButterAngleRefSP = 0;
-    private bool waitingForStartPosition = true;
+    public static bool SaveData = false;
     private bool waitingForEndPosition = true;
     private bool SLConfirmation = false;
     private bool ELConfirmation = false;
@@ -82,6 +82,8 @@ public class Data : MonoBehaviour
         }
     }
 
+    public event EventHandler StartToSample;
+    public event EventHandler AskForStartAngle;
     public event EventHandler OnTaskButtonClicked;
     public event EventHandler OnStopButtonClicked;
 
@@ -89,12 +91,6 @@ public class Data : MonoBehaviour
     public class TableRow
     {
         public string screneName;
-
-        public TableRow(string screneName)
-        {
-            this.screneName = screneName;
-        }
-
         public int screneOrder;
         public int Taskorder;
         public int butterAngle;
@@ -106,7 +102,6 @@ public class Data : MonoBehaviour
         public float angleRefStartPosition;
         public float TotTime;
         public float TimeRefTask;
-
 
         public TableRow(string screne, int sceneOrder, int order, int butterAngleRefSP, int butterAngle, string direction, Vector3 startPosition, Vector3 currentPosition,
                          float angleIn360, float angleRefStartPosition, float Time, float TimeRefTask)
@@ -130,12 +125,13 @@ public class Data : MonoBehaviour
     {
         startTime = DateTime.Now;
         outputFileName = "Data_" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
+        filePath = Path.Combine(Application.persistentDataPath, outputFileName);
 
-        taskButton.onClick.AddListener(TaskButtonClicked);
+        //taskButton.onClick.AddListener(TaskButtonClicked);
         stopButton.onClick.AddListener(StopButtonClicked);
         thanksButton.onClick.AddListener(ThanksButtonClicked);
-        stopPanel.SetActive(false);
-        taskPanel.SetActive(false);
+        // stopPanel.SetActive(false);
+        newScrenePanel.SetActive(false);
         thanksPanel.SetActive(false);
 
         RandomNubers randomNubers = numberRandomizer.GetComponent<RandomNubers>();
@@ -143,11 +139,10 @@ public class Data : MonoBehaviour
         randomNubers.OnGenerateScenes += ComponentAScenesOrder;
         
         HeadLocation location = headLocation.GetComponent<HeadLocation>();
-        location.OnSaveStartLoction += StartLocationConfirmation;
-        location.OnSaveEndLoction += EndLocationConfirmation;
-        location.OnPoseCaptured += HandlePoseCaptured;
+       //location.OnSaveEndLoction += 
+       //location.OnPoseCaptured += HandlePoseCaptured;
 
-        waitingForStartPosition = true;
+        //waitingForStartPosition = true;
     }
 
     private void ButterflyLocation(int[] anglesList, float startAngle)
@@ -180,6 +175,53 @@ public class Data : MonoBehaviour
         butterfly.transform.position = newPosition;
     }
 
+    private void TopManager()
+    {
+        NowAngles = AllTheAngles[currentSceneIndex];
+        current[0] = ScenesOreder[currentSceneIndex];
+        ChangeSceneName();
+        OnCurentScenes?.Invoke(this, new CurrentEventArgs(ScenesOreder[currentSceneIndex]));
+        newScrenePanel.SetActive(true);
+        ScreneText.text = "You are now in the " + currentScreneName + "let's start catching butterflies";
+        ScreneButton.onClick.AddListener(OnScreneButtonClicked);
+    }
+
+    private void OnScreneButtonClicked()
+    {
+        newScrenePanel.SetActive(false);
+        SaveData = true;
+        SceneManeger();
+    }
+    private void SceneManeger()
+    {
+        AskForStartAngle?.Invoke(this, EventArgs.Empty);
+        ButterflyLocation(NowAngles, startAngle); // change butterfly location
+        // איוונט על מיקום פרפר
+        // הופעת חץ וכיוון פניה
+        while (SaveData)
+        {
+            lastAddedRow = new TableRow(
+              sceneName,
+              currentSceneIndex + 1,
+              current[1],
+              ButterAngleSP,
+              0,
+              Currentdirection,
+              Vector3.zero,
+              Vector3.zero,
+            0,
+            0,
+            0,
+            0); 
+            
+            DataTable.Add(lastAddedRow);
+            // temp table row = event data
+            // addin the row to he main table
+        }
+        // העלמת חץ ופרפר
+        currentAngleIndex++;
+        BeginNextProcess();
+    }
     private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
     {
         Debug.Log("ComponentAnglesOrder called");
@@ -195,41 +237,29 @@ public class Data : MonoBehaviour
     private void ComponentAScenesOrder(object sender, RandomNubers.ScenesEventArgs s)
     {
         ScenesOreder = s.Order;
-        CreateTables();
+        StartToSample?.Invoke(this, EventArgs.Empty);
+        TopManager();
     }
 
-    private void StartLocationConfirmation(object sender, EventArgs SLC)
-    {
-        SLConfirmation = true;
-    }
 
-    private void EndLocationConfirmation(object sender, EventArgs SLC)
+    public void ChangeSceneName()
     {
-        ELConfirmation = true;
-    }
-
-    public void CreateTables()
-    {
-        NowAngles = AllTheAngles[currentSceneIndex];
-        current[0] = ScenesOreder[currentSceneIndex];
-        OnCurentScenes?.Invoke(this, new CurrentEventArgs(ScenesOreder[currentSceneIndex]));
-        ButterflyLocation (NowAngles, startAngle); // change butterfly location
-
-        if (ScenesOreder[currentSceneIndex] == 1)
+      
+        if (current[0] == 1)
         {
-            PopulateTable(R0_Data, "empty square room", NowAngles);
+            currentScreneName = "empty square room";
         }
-        if (ScenesOreder[currentSceneIndex] == 2)
+        if (current[0] == 2)
         {
-            PopulateTable(R1_Data, "furnished square room", NowAngles);
+            currentScreneName = "furnished square room";
         }
-        if (ScenesOreder[currentSceneIndex] == 3)
+        if (current[0] == 3)
         {
-            PopulateTable(S0_Data, "empty round room", NowAngles) ;
+            currentScreneName = "empty round room";
         }
-        if (ScenesOreder[currentSceneIndex] == 4)
+        if (current[0] == 4)
         {
-            PopulateTable(S1_Data, "furnished round room", NowAngles);
+            currentScreneName = "furnished round room";
         }
     }
 
@@ -248,28 +278,25 @@ public class Data : MonoBehaviour
                Debug.Log("Lets Start The Next Level");
                currentAngleIndex = 0;
                currentSceneIndex++;
-               waitingForStartPosition = true;
-               CreateTables();
+               SaveTablesToFile();
+               TopManager();
                return;
             }
         }
-
-        waitingForStartPosition = true;
-        CreateTables();
     } 
 
-    private void UpdateCurrentAndShowMessage(int angelValue, string directionValue) // לשנות לחץ בלבד
-    {
-        taskPanel.SetActive(true);
-        taskText.text = "Please turn " + angelValue.ToString() + " degrees to the " + directionValue.ToString();
-    }
+    //private void UpdateCurrentAndShowMessage(int angelValue, string directionValue) // לשנות לחץ בלבד
+    //{
+    //    taskPanel.SetActive(true);
+    //    taskText.text = "Please turn " + angelValue.ToString() + " degrees to the " + directionValue.ToString();
+    //}
 
     private void PopulateTable(List<TableRow> table, string sceneName, int[] anglesOrder) // שיבוא יחד עם דגימת מקום 
     {
         string currentTableName = sceneName;
 
 
-        OnCurentAngle?.Invoke(this, new AngleEventArgs(ButterAngleSP));
+        OnCurentAngle?.Invoke(this, new AngleEventArgs(ButterAngleSP));// איפנ כדאי לשים?
 
         lastAddedRow = new TableRow(
                sceneName,
@@ -283,19 +310,36 @@ public class Data : MonoBehaviour
                0,
                0,
                0,
-               0); table.Add(lastAddedRow); // שמירה
+               0); table.Add(lastAddedRow); // לשמור
 
         UpdateCurrentAndShowMessage(ButterAngleSP, Currentdirection);
     }
 
+    /// /////////////////////////////////////////////////////////////////////
+    private void TaskButtonClicked()
+    {
+        if (waitingForStartPosition)
+        {
+            OnTaskButtonClicked?.Invoke(this, EventArgs.Empty);
+            taskPanel.SetActive(false);
+            if (SLConfirmation)
+            {
+                waitingForStartPosition = false;
+                stopPanel.SetActive(true);
+                waitingForEndPosition = true;
+                SLConfirmation = false;
+            }
+        }
+    }
 
     private void TaskButtonClicked()
     {
         if (waitingForStartPosition)
         {
-            OnTaskButtonClicked?.Invoke(this, EventArgs.Empty); 
+            OnTaskButtonClicked?.Invoke(this, EventArgs.Empty);
             taskPanel.SetActive(false);
-            if (SLConfirmation) {
+            if (SLConfirmation)
+            {
                 waitingForStartPosition = false;
                 stopPanel.SetActive(true);
                 waitingForEndPosition = true;
@@ -315,13 +359,16 @@ public class Data : MonoBehaviour
                 ApplyPoseDataToCurrentRow();
                 waitingForEndPosition = false;
                 ELConfirmation = false;
-                currentAngleIndex = currentAngleIndex+1;
+                currentAngleIndex = currentAngleIndex + 1;
                 BeginNextProcess();
             }
-       
+
         }
     }
-    private void HandlePoseCaptured(object sender, HeadLocation.PoseEventArgs e)
+    /// /////////////////////////////////////////////////
+  
+    
+    private void HandlePoseCaptured(object sender, HeadLocation.PoseEventArgs e) // קרה אוטמטית
     {
         tempStartPosition = e.StartPosition;
         tempElapsedTime = e.ElapsedTime;
@@ -330,7 +377,7 @@ public class Data : MonoBehaviour
         tempStartTime = e.Time;
     }
 
-    private void ApplyPoseDataToCurrentRow() // ?
+    private void ApplyPoseDataToCurrentRow() // קרה בהזמנה אחרי לחיצה על סטופ
     {
         if (lastAddedRow != null)
         {
@@ -350,17 +397,9 @@ public class Data : MonoBehaviour
 
     private void SaveTablesToFile()
     {
-        List<TableRow> allTables = new List<TableRow>();
-        allTables.AddRange(R0_Data);
-        allTables.AddRange(R1_Data);
-        allTables.AddRange(S0_Data);
-        allTables.AddRange(S1_Data);
-
-
-        string filePath = Path.Combine(Application.persistentDataPath, outputFileName);
         using (StreamWriter writer = new StreamWriter(filePath))
         {
-            foreach (TableRow row in allTables)
+            foreach (TableRow row in DataTable)
             {
                 writer.WriteLine($"Scene: {row.screneName}, SenceOrder: {row.screneOrder}, Taskorder: {row.Taskorder}, Instruction: {row.butterAngle}, Direction: {row.direction}, StartPosition: {row.startPosition}, Butterfly angle in 360: {row.angleIn360} , Butterfly angle relative to starting angle: {row.angleRefStartPosition}, Time from the beginning : {row.TotTime}, time relative to the task: {row.TimeRefTask}");
             }
