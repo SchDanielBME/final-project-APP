@@ -1,101 +1,145 @@
 using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
+
 public class HeadLocation : MonoBehaviour
 {
     [SerializeField] private GameObject data;
-    public event EventHandler<PoseEventArgs> OnPoseCaptured;
-    public event EventHandler OnSaveEndLoction;
+
+    public event EventHandler OnSaveEndLocation;
+    public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
+
     private Vector3 startPosition;
-    private Vector3 endPosition;
-    private float StartAngle; 
+    private bool shouldUpdatePosition = false;
+    private float updateInterval = 1f / 8f; // 8Hz
+    private float nextUpdateTime = 0f;
+    private float startAngle;
     private float startTime;
-    private float endTime;
-    private float realAngleInXZPlane;
-    private float angleError;
-    [SerializeField] private int angle;
+    private float currentButterflyAngle;
+    private float angleMatchStartTime = 0f;
+    private bool isAngleMatching = false;
+    private int matchingSamples = 0;
 
-    public class PoseEventArgs : EventArgs
+    public class PositionSampledEventArgs : EventArgs
     {
-        public Vector3 StartPosition { get; private set; }
-        public Vector3 EndPosition { get; private set; }
-        public float Result { get; private set; }
-        public float ElapsedTime { get; private set; }
-        public float Time { get; private set; }
-        public float ErrorTime { get; private set; }
+        public Vector3 StartPosition { get; }
+        public float StartAngle { get; }
+        public Vector3 CurrentPosition { get; }
+        public float CurrentAngle { get; }
+        public float CurrentTime { get; }
+        public float TimeDifference { get; }
 
-
-        public PoseEventArgs(Vector3 startPosition, float angleResult, float elapsedTime,float time, float angleError)
+        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentTime, float timeDifference)
         {
             StartPosition = startPosition;
-            Result = angleResult;
-            ElapsedTime = elapsedTime;
-            Time = time;
-            ErrorTime = angleError;
+            StartAngle = startAngle;
+            CurrentPosition = currentPosition;
+            CurrentAngle = currentAngle;
+            CurrentTime = currentTime;
+            TimeDifference = timeDifference;
         }
     }
-    
 
-    void Start()
+    private void Start()
     {
         Data dataInfo = data.GetComponent<Data>();
         if (dataInfo != null)
         {
             dataInfo.AskForStartAngle += TakeStartPose;
-            dataInfo.OnTaskButtonClicked += TakeStartPose;
-            dataInfo.OnStopButtonClicked += TakeEndPose;
-            dataInfo.OnCurentAngle += GetCurentAngle; ;
+            dataInfo.StartToSample += StartSampling;
+            dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
         }
+    }
+
+    private void OnEnable()
+    {
+        Data dataInfo = data.GetComponent<Data>();
+        if (dataInfo != null)
+        {
+            dataInfo.StartToSample += StartSampling;
+            dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
+        }
+    }
+
+    private void OnDisable()
+    {
+        Data dataInfo = data.GetComponent<Data>();
+        if (dataInfo != null)
+        {
+            dataInfo.StartToSample -= StartSampling;
+            dataInfo.ButterflyAngleUpdated -= UpdateButterflyAngle;
+        }
+    }
+
+    private void StartSampling(object sender, EventArgs e)
+    {
+        shouldUpdatePosition = true;
+        nextUpdateTime = Time.time;
     }
 
     private void TakeStartPose(object sender, EventArgs e)
     {
         startPosition = Camera.main.transform.forward;
         startTime = Time.time;
-        StartAngle = AngleFromVector(Vector3.zero, startPosition);
-        Data.startAngle = StartAngle;
+        startAngle = AngleFromVector(Vector3.zero, startPosition);
+        Data.startAngle = startAngle;
+        Data.SaveData = true;
+        shouldUpdatePosition = true;
+        nextUpdateTime = Time.time;
+    }
+
+    private void Update()
+    {
+        if (shouldUpdatePosition && Time.time >= nextUpdateTime)
+        {
+            Vector3 currentPosition = Camera.main.transform.forward;
+            float currentAngle = AngleFromVector(Vector3.zero, currentPosition);
+            float currentTime = Time.time;
+            float timeDifference = currentTime - startTime;
+
+            if (Data.SaveData)
+            {
+                OnPositionSampled?.Invoke(this, new PositionSampledEventArgs(
+                     startPosition,
+                     startAngle,
+                     currentPosition,
+                     currentAngle,
+                     currentTime,
+                     timeDifference
+                 ));
+            }
+
+            if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 3f)
+            {
+                matchingSamples++;
+                if (matchingSamples >= 16)
+                {
+                    Data.SaveData = false;
+                }
+            }
+            else
+            {
+                matchingSamples = 0;
+            }
+
+            nextUpdateTime = Time.time + updateInterval;
+        }
+    }
+
+    private void UpdateButterflyAngle(object sender, Data.ButterEventArgs e)
+    {
+        currentButterflyAngle = e.ButterAngle;
     }
 
     private float AngleFromVector(Vector3 direction1, Vector3 direction2)
     {
         direction1.y = 0;
         direction2.y = 0;
-        float AngleInXZPlane = Vector3.SignedAngle(direction1, direction2, Vector3.up);
+        float angleInXZPlane = Vector3.SignedAngle(direction1, direction2, Vector3.up);
 
-        if (AngleInXZPlane < 0)
+        if (angleInXZPlane < 0)
         {
-            AngleInXZPlane += 360;
+            angleInXZPlane += 360;
         }
-        return AngleInXZPlane;
-    }
-    private void TakeEndPose(object sender, EventArgs e)
-    {
-        endPosition = Camera.main.transform.forward;
-        endTime = Time.time;
-        float elapsedTime = endTime - startTime;
-        OnSaveEndLoction?.Invoke(this, EventArgs.Empty);
-
-        Vector3 startDirection = new Vector3(startPosition.x, 0, startPosition.z);
-        Vector3 endDirection = new Vector3(endPosition.x, 0, endPosition.z);
-        realAngleInXZPlane = Vector3.SignedAngle(startDirection, endDirection, Vector3.up);
-
-        if (realAngleInXZPlane < 0)
-        {
-            realAngleInXZPlane += 360;
-        }
-        angleError = Mathf.Abs(angle - realAngleInXZPlane);
-
-        OnPoseCaptured?.Invoke(this, new PoseEventArgs(startPosition, realAngleInXZPlane, elapsedTime, startTime, angleError));
-        startTime = 0;
-        endTime = 0;
-    }
-
-    private void GetCurentAngle(object sender, Data.AngleEventArgs en)
-    {
-        angle = en.Angle;
-
+        return angleInXZPlane;
     }
 }

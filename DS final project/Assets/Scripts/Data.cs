@@ -33,10 +33,8 @@ public class Data : MonoBehaviour
     [SerializeField] private GameObject thanksPanel;
     [SerializeField] private GameObject newScrenePanel;
     [SerializeField] private TextMeshProUGUI ScreneText;
-    [SerializeField] private Button ScreneButton;
-    [SerializeField] private GameObject stopPanel;
-    [SerializeField] private Button stopButton;
-    [SerializeField] private Button thanksButton;
+    [SerializeField] private GameObject ScreneButton;
+    [SerializeField] private GameObject thanksButton;
     [SerializeField] private GameObject butterfly;
 
 
@@ -47,8 +45,7 @@ public class Data : MonoBehaviour
     float tempButterAngleRefSP = 0;
     public static bool SaveData = false;
     private bool waitingForEndPosition = true;
-    private bool SLConfirmation = false;
-    private bool ELConfirmation = false;
+
 
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
@@ -82,8 +79,22 @@ public class Data : MonoBehaviour
         }
     }
 
+    public event EventHandler<ButterEventArgs> ButterflyAngleUpdated;
+    public class ButterEventArgs : EventArgs
+    {
+        public float ButterAngle { get; }
+
+
+        public ButterEventArgs(float butterAngle)
+        {
+            ButterAngle = butterAngle;
+        }
+    }
+
+
     public event EventHandler StartToSample;
     public event EventHandler AskForStartAngle;
+
     public event EventHandler OnTaskButtonClicked;
     public event EventHandler OnStopButtonClicked;
 
@@ -93,30 +104,32 @@ public class Data : MonoBehaviour
         public string screneName;
         public int screneOrder;
         public int Taskorder;
-        public int butterAngle;
         public int butterAngleRefStartPosition;
+        public int butterAngle;
         public string direction;
         public Vector3 startPosition;
+        public float startPositionAngle;
         public Vector3 currentPosition;
-        public float angleIn360;
-        public float angleRefStartPosition;
+        public float currentPositionAngle;
+        public float currentPositionAngleRefButter;
         public float TotTime;
         public float TimeRefTask;
 
-        public TableRow(string screne, int sceneOrder, int order, int butterAngleRefSP, int butterAngle, string direction, Vector3 startPosition, Vector3 currentPosition,
-                         float angleIn360, float angleRefStartPosition, float Time, float TimeRefTask)
+        public TableRow(string screneName, int sceneOrder, int taskOrder, int butterAngleRefSP, int butterAngle, string direction,
+            Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, float totTime, float TimeRefTask)
         {
-            this.screneName = screne;
+            this.screneName = screneName;
             this.screneOrder = sceneOrder;
-            this.Taskorder = order; // ??
+            this.Taskorder = taskOrder; 
             this.butterAngleRefStartPosition = butterAngleRefSP; // butterfly angle
             this.butterAngle = butterAngle; // butterfly angle
             this.direction = direction; //right or left
             this.startPosition = startPosition;
+            this.startPositionAngle = startPositionAngle;
             this.currentPosition = currentPosition;
-            this.angleIn360 = angleIn360;
-            this.angleRefStartPosition = angleRefStartPosition;
-            this.TotTime = Time; // from the beginning
+            this.currentPositionAngle = currentPositionAngle;
+            this.currentPositionAngleRefButter = currentPositionAngleRefButter;
+            this.TotTime = totTime; // from the beginning
             this.TimeRefTask = TimeRefTask;
         }
     }
@@ -127,10 +140,7 @@ public class Data : MonoBehaviour
         outputFileName = "Data_" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
         filePath = Path.Combine(Application.persistentDataPath, outputFileName);
 
-        //taskButton.onClick.AddListener(TaskButtonClicked);
-        stopButton.onClick.AddListener(StopButtonClicked);
-        thanksButton.onClick.AddListener(ThanksButtonClicked);
-        // stopPanel.SetActive(false);
+        //thanksButton.onClick.AddListener(ThanksButtonClicked);
         newScrenePanel.SetActive(false);
         thanksPanel.SetActive(false);
 
@@ -139,40 +149,7 @@ public class Data : MonoBehaviour
         randomNubers.OnGenerateScenes += ComponentAScenesOrder;
         
         HeadLocation location = headLocation.GetComponent<HeadLocation>();
-       //location.OnSaveEndLoction += 
-       //location.OnPoseCaptured += HandlePoseCaptured;
-
-        //waitingForStartPosition = true;
-    }
-
-    private void ButterflyLocation(int[] anglesList, float startAngle)
-    {
-        current[1] = anglesList[currentAngleIndex];
-        tempButterAngle = angels[current[1] - 1];
-        string Currentdirection = direction[current[1] - 1];
-
-        if (Currentdirection == "right")
-        {
-            tempButterAngleRefSP = startAngle + tempButterAngle;
-        }
-        else{
-            tempButterAngleRefSP = startAngle - tempButterAngle;
-        }
-
-        if (tempButterAngleRefSP < 0)
-        {
-            tempButterAngleRefSP = tempButterAngleRefSP + 360;
-        }
-
-        float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
-        float radius = 1.5f; 
-        float x = radius * Mathf.Cos(tempButterAngleRefSPRad);
-        float y = radius * Mathf.Sin(tempButterAngleRefSPRad);
-        float z = butterfly.transform.position.z; 
-
-        // Set the new position
-        Vector3 newPosition = new Vector3(x, y, z);
-        butterfly.transform.position = newPosition;
+        location.OnPositionSampled += SaveDataRow;
     }
 
     private void TopManager()
@@ -189,38 +166,95 @@ public class Data : MonoBehaviour
     private void OnScreneButtonClicked()
     {
         newScrenePanel.SetActive(false);
-        SaveData = true;
-        SceneManeger();
+        SceneManager();
     }
-    private void SceneManeger()
+
+    private void SceneManager()
     {
         AskForStartAngle?.Invoke(this, EventArgs.Empty);
-        ButterflyLocation(NowAngles, startAngle); // change butterfly location
-        // איוונט על מיקום פרפר
-        // הופעת חץ וכיוון פניה
-        while (SaveData)
+        waitingForEndPosition = false;
+        if (!waitingForEndPosition)
         {
-            lastAddedRow = new TableRow(
-              sceneName,
-              currentSceneIndex + 1,
-              current[1],
-              ButterAngleSP,
-              0,
-              Currentdirection,
-              Vector3.zero,
-              Vector3.zero,
-            0,
-            0,
-            0,
-            0); 
-            
-            DataTable.Add(lastAddedRow);
-            // temp table row = event data
-            // addin the row to he main table
+            ButterflyLocation(NowAngles, startAngle);
         }
-        // העלמת חץ ופרפר
-        currentAngleIndex++;
-        BeginNextProcess();
+    }
+
+    //private void HandlePositionSampled(object sender, HeadLocation.PositionSampledEventArgs e)
+    //{
+    //    SaveDataRow(e);
+    //}
+
+    private void ButterflyLocation(int[] anglesList, float startAngle)
+    {
+        float tempButterAngle = anglesList[currentAngleIndex-1] ; // Assuming this is correct, please verify
+        string currentDirection = "right"; // Replace with actual direction logic
+
+        float tempButterAngleRefSP;
+        if (currentDirection == "right")
+        {
+            tempButterAngleRefSP = startAngle + tempButterAngle;
+        }
+        else
+        {
+            tempButterAngleRefSP = startAngle - tempButterAngle;
+        }
+
+        if (tempButterAngleRefSP < 0)
+        {
+            tempButterAngleRefSP += 360;
+        }
+
+        float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
+        float radius = 1.5f;
+        float x = radius * Mathf.Cos(tempButterAngleRefSPRad);
+        float y = radius * Mathf.Sin(tempButterAngleRefSPRad);
+        float z = transform.position.z; // Ensure this is the correct position reference
+
+        // Set the new position
+        Vector3 newPosition = new Vector3(x, y, z);
+        transform.position = newPosition;
+
+        // Trigger the event
+        ButterflyAngleUpdated?.Invoke(this, new ButterEventArgs(tempButterAngleRefSP));
+
+        SaveData = true;
+    }
+
+
+    private void SaveDataRow(object sender, HeadLocation.PositionSampledEventArgs e)
+    {
+        Vector3 startPosition = e.StartPosition;
+        float startPositionAngle = e.StartAngle;
+        Vector3 currentPosition = e.CurrentPosition;
+        float currentPositionAngle = e.CurrentAngle;
+        float currentTime = e.CurrentTime;
+        float timeDifference = e.TimeDifference;
+        float currentPositionAngleRefButter = tempButterAngle - currentPositionAngle;
+        float totalTime = (float)(DateTime.Now - startTime).TotalSeconds;
+
+        lastAddedRow = new TableRow(
+            currentScreneName,
+            currentSceneIndex + 1,
+            currentAngleIndex,
+            NowAngles[currentAngleIndex],
+            (int)tempButterAngleRefSP,
+            direction[currentAngleIndex],
+            startPosition,
+            startPositionAngle,
+            currentPosition,
+            currentPositionAngle,
+            currentPositionAngleRefButter,
+            totalTime,
+            timeDifference
+        );
+
+        DataTable.Add(lastAddedRow);
+
+        if (!SaveData)
+        {
+            currentAngleIndex++;
+            BeginNextProcess();
+        }
     }
     private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
     {
@@ -244,22 +278,20 @@ public class Data : MonoBehaviour
 
     public void ChangeSceneName()
     {
-      
-        if (current[0] == 1)
+        switch (current[0])
         {
-            currentScreneName = "empty square room";
-        }
-        if (current[0] == 2)
-        {
-            currentScreneName = "furnished square room";
-        }
-        if (current[0] == 3)
-        {
-            currentScreneName = "empty round room";
-        }
-        if (current[0] == 4)
-        {
-            currentScreneName = "furnished round room";
+            case 1:
+                currentScreneName = "empty square room";
+                break;
+            case 2:
+                currentScreneName = "furnished square room";
+                break;
+            case 3:
+                currentScreneName = "empty round room";
+                break;
+            case 4:
+                currentScreneName = "furnished round room";
+                break;
         }
     }
 
@@ -283,111 +315,13 @@ public class Data : MonoBehaviour
                return;
             }
         }
-    } 
-
-    //private void UpdateCurrentAndShowMessage(int angelValue, string directionValue) // לשנות לחץ בלבד
-    //{
-    //    taskPanel.SetActive(true);
-    //    taskText.text = "Please turn " + angelValue.ToString() + " degrees to the " + directionValue.ToString();
-    //}
-
-    private void PopulateTable(List<TableRow> table, string sceneName, int[] anglesOrder) // שיבוא יחד עם דגימת מקום 
-    {
-        string currentTableName = sceneName;
-
-
-        OnCurentAngle?.Invoke(this, new AngleEventArgs(ButterAngleSP));// איפנ כדאי לשים?
-
-        lastAddedRow = new TableRow(
-               sceneName,
-               currentSceneIndex + 1,
-               current[1],
-               ButterAngleSP,
-               0,
-               Currentdirection,
-               Vector3.zero, 
-               Vector3.zero,
-               0,
-               0,
-               0,
-               0); table.Add(lastAddedRow); // לשמור
-
-        UpdateCurrentAndShowMessage(ButterAngleSP, Currentdirection);
-    }
-
-    /// /////////////////////////////////////////////////////////////////////
-    private void TaskButtonClicked()
-    {
-        if (waitingForStartPosition)
+        else
         {
-            OnTaskButtonClicked?.Invoke(this, EventArgs.Empty);
-            taskPanel.SetActive(false);
-            if (SLConfirmation)
-            {
-                waitingForStartPosition = false;
-                stopPanel.SetActive(true);
-                waitingForEndPosition = true;
-                SLConfirmation = false;
-            }
+            waitingForEndPosition = true;
+            SceneManager();
         }
     }
 
-    private void TaskButtonClicked()
-    {
-        if (waitingForStartPosition)
-        {
-            OnTaskButtonClicked?.Invoke(this, EventArgs.Empty);
-            taskPanel.SetActive(false);
-            if (SLConfirmation)
-            {
-                waitingForStartPosition = false;
-                stopPanel.SetActive(true);
-                waitingForEndPosition = true;
-                SLConfirmation = false;
-            }
-        }
-    }
-
-    private void StopButtonClicked()
-    {
-        if (waitingForEndPosition)
-        {
-            OnStopButtonClicked?.Invoke(this, EventArgs.Empty);
-            stopPanel.SetActive(false);
-            if (ELConfirmation)
-            {
-                ApplyPoseDataToCurrentRow();
-                waitingForEndPosition = false;
-                ELConfirmation = false;
-                currentAngleIndex = currentAngleIndex + 1;
-                BeginNextProcess();
-            }
-
-        }
-    }
-    /// /////////////////////////////////////////////////
-  
-    
-    private void HandlePoseCaptured(object sender, HeadLocation.PoseEventArgs e) // קרה אוטמטית
-    {
-        tempStartPosition = e.StartPosition;
-        tempElapsedTime = e.ElapsedTime;
-        tempAngleError = e.ErrorTime;
-        tempResult = e.Result;
-        tempStartTime = e.Time;
-    }
-
-    private void ApplyPoseDataToCurrentRow() // קרה בהזמנה אחרי לחיצה על סטופ
-    {
-        if (lastAddedRow != null)
-        {
-            lastAddedRow.startPosition = tempStartPosition;
-            lastAddedRow.angleIn360 = tempAngleError; // ?
-            lastAddedRow.TotTime = tempElapsedTime;
-            lastAddedRow.angleRefStartPosition = tempResult; //?
-            lastAddedRow.TimeRefTask = tempStartTime; //? 
-        }
-    }
 
     private void ThanksButtonClicked()
     {
@@ -401,7 +335,7 @@ public class Data : MonoBehaviour
         {
             foreach (TableRow row in DataTable)
             {
-                writer.WriteLine($"Scene: {row.screneName}, SenceOrder: {row.screneOrder}, Taskorder: {row.Taskorder}, Instruction: {row.butterAngle}, Direction: {row.direction}, StartPosition: {row.startPosition}, Butterfly angle in 360: {row.angleIn360} , Butterfly angle relative to starting angle: {row.angleRefStartPosition}, Time from the beginning : {row.TotTime}, time relative to the task: {row.TimeRefTask}");
+                writer.WriteLine($"Scene: {row.screneName}, Sence Order(1-4): {row.screneOrder}, Task Order(1-6): {row.Taskorder}, Relative butterfly angle: {row.butterAngle}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleRefStartPosition}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Cuurent Position Vector: {row.currentPosition},  Cuurent Position Angle: {row.startPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
             }
         }
 
