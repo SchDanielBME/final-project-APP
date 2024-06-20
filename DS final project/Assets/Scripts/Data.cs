@@ -5,7 +5,6 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static UnityEngine.Rendering.DebugUI;
 
 public class Data : MonoBehaviour
 {
@@ -33,8 +32,8 @@ public class Data : MonoBehaviour
     [SerializeField] private GameObject thanksPanel;
     [SerializeField] private GameObject newScrenePanel;
     [SerializeField] private TextMeshProUGUI ScreneText;
-    [SerializeField] private GameObject ScreneButton;
-    [SerializeField] private GameObject thanksButton;
+    [SerializeField] private Button ScreneButton;
+    [SerializeField] private Button thanksButton;
     [SerializeField] private GameObject butterfly;
 
 
@@ -67,17 +66,6 @@ public class Data : MonoBehaviour
         }
     }
 
-    public event EventHandler<AngleEventArgs> OnCurentAngle;
-    public class AngleEventArgs : EventArgs
-    {
-        public int Angle { get; }
-
-
-        public AngleEventArgs(int angleIn360)
-        {
-            Angle = angleIn360;
-        }
-    }
 
     public event EventHandler<ButterEventArgs> ButterflyAngleUpdated;
     public class ButterEventArgs : EventArgs
@@ -95,8 +83,6 @@ public class Data : MonoBehaviour
     public event EventHandler StartToSample;
     public event EventHandler AskForStartAngle;
 
-    public event EventHandler OnTaskButtonClicked;
-    public event EventHandler OnStopButtonClicked;
 
     [System.Serializable] 
     public class TableRow
@@ -151,7 +137,26 @@ public class Data : MonoBehaviour
         HeadLocation location = headLocation.GetComponent<HeadLocation>();
         location.OnPositionSampled += SaveDataRow;
     }
+    private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
+    {
+        FirstAngles = e.FirstAngles;
+        SecondAngles = e.SecondAngles;
+        ThirdAngles = e.ThirdAngles;
+        FourthAngles = e.FourthAngles;
 
+        AllTheAngles = new int[][] { FirstAngles, SecondAngles, ThirdAngles, FourthAngles };
+        Debug.Log("Angles Order called");
+
+    }
+
+    private void ComponentAScenesOrder(object sender, RandomNubers.ScenesEventArgs s)
+    {
+        ScenesOreder = s.Order;
+        Debug.Log("Scenes Order called");
+
+        StartToSample?.Invoke(this, EventArgs.Empty);
+        TopManager();
+    }
     private void TopManager()
     {
         NowAngles = AllTheAngles[currentSceneIndex];
@@ -159,7 +164,7 @@ public class Data : MonoBehaviour
         ChangeSceneName();
         OnCurentScenes?.Invoke(this, new CurrentEventArgs(ScenesOreder[currentSceneIndex]));
         newScrenePanel.SetActive(true);
-        ScreneText.text = "You are now in the " + currentScreneName + "let's start catching butterflies";
+        ScreneText.text = "You are now in the " + currentScreneName + " let's start catching butterflies";
         ScreneButton.onClick.AddListener(OnScreneButtonClicked);
     }
 
@@ -176,17 +181,17 @@ public class Data : MonoBehaviour
         if (!waitingForEndPosition)
         {
             ButterflyLocation(NowAngles, startAngle);
+            butterfly.SetActive(true);
         }
     }
 
-    //private void HandlePositionSampled(object sender, HeadLocation.PositionSampledEventArgs e)
-    //{
-    //    SaveDataRow(e);
-    //}
 
     private void ButterflyLocation(int[] anglesList, float startAngle)
     {
-        float tempButterAngle = anglesList[currentAngleIndex-1] ; // Assuming this is correct, please verify
+        Debug.Log($"current angle index: {currentAngleIndex}");
+        Debug.Log($"start angle is: {startAngle}");
+
+        float tempButterAngle = anglesList[currentAngleIndex]; // Assuming this is correct, please verify
         string currentDirection = "right"; // Replace with actual direction logic
 
         float tempButterAngleRefSP;
@@ -207,16 +212,16 @@ public class Data : MonoBehaviour
         float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
         float radius = 1.5f;
         float x = radius * Mathf.Cos(tempButterAngleRefSPRad);
-        float y = radius * Mathf.Sin(tempButterAngleRefSPRad);
-        float z = transform.position.z; // Ensure this is the correct position reference
+        float y = 1.2f;
+        float z = radius * Mathf.Sin(tempButterAngleRefSPRad) - 10;  // Ensure this is the correct position reference
 
         // Set the new position
         Vector3 newPosition = new Vector3(x, y, z);
-        transform.position = newPosition;
+        butterfly.transform.position = newPosition;
 
         // Trigger the event
         ButterflyAngleUpdated?.Invoke(this, new ButterEventArgs(tempButterAngleRefSP));
-
+        Debug.Log($"butterfly angle is: {tempButterAngleRefSP}");
         SaveData = true;
     }
 
@@ -252,29 +257,12 @@ public class Data : MonoBehaviour
 
         if (!SaveData)
         {
+            butterfly.SetActive(false);
             currentAngleIndex++;
             BeginNextProcess();
         }
     }
-    private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
-    {
-        Debug.Log("ComponentAnglesOrder called");
-        FirstAngles = e.FirstAngles;
-        SecondAngles = e.SecondAngles;
-        ThirdAngles = e.ThirdAngles;
-        FourthAngles = e.FourthAngles;
-
-        AllTheAngles = new int[][] { FirstAngles, SecondAngles, ThirdAngles, FourthAngles }; // ?  
-    }
-
-
-    private void ComponentAScenesOrder(object sender, RandomNubers.ScenesEventArgs s)
-    {
-        ScenesOreder = s.Order;
-        StartToSample?.Invoke(this, EventArgs.Empty);
-        TopManager();
-    }
-
+   
 
     public void ChangeSceneName()
     {

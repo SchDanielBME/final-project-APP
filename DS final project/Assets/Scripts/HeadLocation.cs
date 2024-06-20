@@ -5,18 +5,18 @@ public class HeadLocation : MonoBehaviour
 {
     [SerializeField] private GameObject data;
 
-    public event EventHandler OnSaveEndLocation;
     public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
 
     private Vector3 startPosition;
+    private Vector3 currentPosition;
+    private float currentTime;
+    private float currentAngle;
     private bool shouldUpdatePosition = false;
     private float updateInterval = 1f / 8f; // 8Hz
     private float nextUpdateTime = 0f;
     private float startAngle;
     private float startTime;
     private float currentButterflyAngle;
-    private float angleMatchStartTime = 0f;
-    private bool isAngleMatching = false;
     private int matchingSamples = 0;
 
     public class PositionSampledEventArgs : EventArgs
@@ -78,22 +78,25 @@ public class HeadLocation : MonoBehaviour
 
     private void TakeStartPose(object sender, EventArgs e)
     {
-        startPosition = Camera.main.transform.forward;
-        startTime = Time.time;
-        startAngle = AngleFromVector(Vector3.zero, startPosition);
-        Data.startAngle = startAngle;
+        if (!Data.SaveData)
+        {
+            startPosition = currentPosition;
+            Debug.Log($"start position: {startPosition}");
+            startTime = currentTime;
+            Data.startAngle = currentAngle;
+            Debug.Log($"start angle isssssssssss: {Data.startAngle}");
+        }
         Data.SaveData = true;
-        shouldUpdatePosition = true;
-        nextUpdateTime = Time.time;
     }
 
     private void Update()
     {
         if (shouldUpdatePosition && Time.time >= nextUpdateTime)
         {
-            Vector3 currentPosition = Camera.main.transform.forward;
-            float currentAngle = AngleFromVector(Vector3.zero, currentPosition);
-            float currentTime = Time.time;
+            currentPosition = Camera.main.transform.forward;
+            Debug.Log($"current position: {currentPosition}");
+            currentAngle = AngleFromVector(Vector3.zero, currentPosition);
+            currentTime = Time.time;
             float timeDifference = currentTime - startTime;
 
             if (Data.SaveData)
