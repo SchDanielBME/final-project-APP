@@ -7,16 +7,16 @@ using UnityEngine;
 public class RandomNubers : MonoBehaviour
 {
     private int[] order = { 1, 2, 3, 4 };
-    [SerializeField] private int first = 0;
-    [SerializeField] private int second = 0;
-    [SerializeField] private int third = 0;
-    [SerializeField] private int fourth = 0;
+    private int first = 0;
+    private int second = 0;
+    private int third = 0;
+    private int fourth = 0;
 
 
-    [SerializeField] private int[] firstAnglesOrder = { 1, 2, 3, 4, 5, 6};
-    [SerializeField] private int[] secondAnglesOrder = { 1, 2, 3, 4, 5, 6};
-    [SerializeField] private int[] thirdAnglesOrder = {1, 2, 3, 4, 5, 6};
-    [SerializeField] private int[] fourthAnglesOrder = { 1, 2, 3, 4, 5, 6 };
+    private int[] firstAnglesOrder = { 1, 2, 3, 4, 5, 6};
+    private int[] secondAnglesOrder = { 1, 2, 3, 4, 5, 6};
+    private int[] thirdAnglesOrder = {1, 2, 3, 4, 5, 6};
+    private int[] fourthAnglesOrder = { 1, 2, 3, 4, 5, 6 };
 
 
     public event EventHandler<ScenesEventArgs> OnGenerateScenes;

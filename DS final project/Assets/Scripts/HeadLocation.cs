@@ -6,6 +6,8 @@ public class HeadLocation : MonoBehaviour
     [SerializeField] private GameObject data;
 
     public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
+    public event EventHandler OnSameLocation;
+
 
     private Vector3 startPosition;
     private Vector3 currentPosition;
@@ -14,7 +16,6 @@ public class HeadLocation : MonoBehaviour
     private bool shouldUpdatePosition = false;
     private float updateInterval = 1f / 8f; // 8Hz
     private float nextUpdateTime = 0f;
-    private float startAngle;
     private float startTime;
     private float currentButterflyAngle;
     private int matchingSamples = 0;
@@ -27,13 +28,16 @@ public class HeadLocation : MonoBehaviour
         public float CurrentAngle { get; }
         public float CurrentTime { get; }
         public float TimeDifference { get; }
+        public float CurrentButterflyAngle { get; }
 
-        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentTime, float timeDifference)
+
+        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, float currentTime, float timeDifference)
         {
             StartPosition = startPosition;
             StartAngle = startAngle;
             CurrentPosition = currentPosition;
             CurrentAngle = currentAngle;
+            CurrentButterflyAngle = currentButterflyAngle;
             CurrentTime = currentTime;
             TimeDifference = timeDifference;
         }
@@ -81,10 +85,10 @@ public class HeadLocation : MonoBehaviour
         if (!Data.SaveData)
         {
             startPosition = currentPosition;
-            Debug.Log($"start position: {startPosition}");
+            //Debug.Log($"start position: {startPosition}");
             startTime = currentTime;
             Data.startAngle = currentAngle;
-            Debug.Log($"start angle isssssssssss: {Data.startAngle}");
+            //Debug.Log($"start angle is: {Data.startAngle}");
         }
         Data.SaveData = true;
     }
@@ -94,8 +98,10 @@ public class HeadLocation : MonoBehaviour
         if (shouldUpdatePosition && Time.time >= nextUpdateTime)
         {
             currentPosition = Camera.main.transform.forward;
-            Debug.Log($"current position: {currentPosition}");
-            currentAngle = AngleFromVector(Vector3.zero, currentPosition);
+            //Debug.Log($"current position: {currentPosition}");
+            Vector3 D1 = new Vector3(0,0,1);
+            currentAngle = AngleFromVector(D1, currentPosition);
+            //Debug.Log($"current angle: {currentAngle}");
             currentTime = Time.time;
             float timeDifference = currentTime - startTime;
 
@@ -103,25 +109,30 @@ public class HeadLocation : MonoBehaviour
             {
                 OnPositionSampled?.Invoke(this, new PositionSampledEventArgs(
                      startPosition,
-                     startAngle,
+                     Data.startAngle,
                      currentPosition,
                      currentAngle,
+                     currentButterflyAngle,
                      currentTime,
                      timeDifference
                  ));
-            }
 
-            if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 3f)
-            {
-                matchingSamples++;
-                if (matchingSamples >= 16)
+                if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 3f)
                 {
-                    Data.SaveData = false;
+                    matchingSamples++;
+                    //Debug.Log($"matching Samples: {matchingSamples}");
+                    if (matchingSamples >= 16)
+                    {
+                        matchingSamples = 0;
+                        //Debug.Log($"matching Samples: {matchingSamples}");
+                        Data.SaveData = false;
+                        OnSameLocation?.Invoke(this, EventArgs.Empty);
+                    }
                 }
-            }
-            else
-            {
-                matchingSamples = 0;
+                else
+                {
+                    matchingSamples = 0;
+                }
             }
 
             nextUpdateTime = Time.time + updateInterval;
@@ -131,18 +142,20 @@ public class HeadLocation : MonoBehaviour
     private void UpdateButterflyAngle(object sender, Data.ButterEventArgs e)
     {
         currentButterflyAngle = e.ButterAngle;
+        //Debug.Log($"current BUTTER angle: {currentButterflyAngle}");
     }
 
     private float AngleFromVector(Vector3 direction1, Vector3 direction2)
     {
-        direction1.y = 0;
         direction2.y = 0;
+
         float angleInXZPlane = Vector3.SignedAngle(direction1, direction2, Vector3.up);
 
         if (angleInXZPlane < 0)
         {
             angleInXZPlane += 360;
         }
+        //Debug.Log($"angle In XZ: {angleInXZPlane}");
         return angleInXZPlane;
     }
 }
