@@ -117,7 +117,7 @@ public class HeadLocation : MonoBehaviour
                      timeDifference
                  ));
 
-                if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 3f)
+                if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 4f)
                 {
                     matchingSamples++;
                     //Debug.Log($"matching Samples: {matchingSamples}");

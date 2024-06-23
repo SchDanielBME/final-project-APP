@@ -147,8 +147,8 @@ public class Data : MonoBehaviour
         location.OnPositionSampled += SaveDataRow;
         location.OnSameLocation += SceneManager2;
 
-        leftLaser = leftController.GetComponent<LineRenderer>();
-        rightLaser = rightController.GetComponent<LineRenderer>();
+        //leftLaser = leftController.GetComponent<LineRenderer>();
+       // rightLaser = rightController.GetComponent<LineRenderer>();
     }
     private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
     {
@@ -217,22 +217,11 @@ public class Data : MonoBehaviour
 
     private void ButterflyLocation(int[] anglesList, string[] direction, float startAngle)
     {
-        //Debug.Log($"current angle index BUT: {currentAngleIndex}");
-        //foreach (int element in anglesList)
-        //{
-        //    Debug.Log(element);
-        //}
-        //foreach (int element in angels)
-        //{
-        //    Debug.Log(element);
-        //}
-        //Debug.Log($"start angle is: {startAngle}");
-
-
+      
         float tempButterAngle = angels[anglesList[currentAngleIndex]-1]; // Assuming this is correct, please verify
-        Debug.Log($"Needed Butter Angle angle is: {tempButterAngle}");
+        //Debug.Log($"Needed Butter Angle angle is: {tempButterAngle}");
         string currentDirection = direction[anglesList[currentAngleIndex] - 1];
-        Debug.Log($"current Direction is: {currentDirection}");
+        //Debug.Log($"current Direction is: {currentDirection}");
 
         float tempButterAngleRefSP;
         if (currentDirection == "right")
@@ -383,26 +372,14 @@ public class Data : MonoBehaviour
 
     private void EnableLasers()
     {
-        if (leftLaser != null)
-        {
-            leftLaser.enabled = true;
-        }
-        if (rightLaser != null)
-        {
-            rightLaser.enabled = true;
-        }
+        rightController.SetActive(true);
+        leftController.SetActive(true);
     }
 
     private void DisableLasers()
     {
-        if (leftLaser != null)
-        {
-            leftLaser.enabled = false;
-        }
-        if (rightLaser != null)
-        {
-            rightLaser.enabled = false;
-        }
+        rightController.SetActive(false);
+        leftController.SetActive(false);
     }
 
 }
