@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+
 public class HeadLocation : MonoBehaviour
 {
     [SerializeField] private GameObject data;
@@ -20,6 +21,8 @@ public class HeadLocation : MonoBehaviour
     private float currentButterflyAngle;
     private int matchingSamples = 0;
 
+    private CustomLSLMarkerStream markerStream;
+    private float lastSentAngle = 0;
     public class PositionSampledEventArgs : EventArgs
     {
         public Vector3 StartPosition { get; }
@@ -51,6 +54,12 @@ public class HeadLocation : MonoBehaviour
             dataInfo.AskForStartAngle += TakeStartPose;
             dataInfo.StartToSample += StartSampling;
             dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
+        }
+
+        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
+        if (markerStream == null)
+        {
+            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
         }
     }
 
@@ -85,10 +94,8 @@ public class HeadLocation : MonoBehaviour
         if (!Data.SaveData)
         {
             startPosition = currentPosition;
-            //Debug.Log($"start position: {startPosition}");
             startTime = currentTime;
             Data.startAngle = currentAngle;
-            //Debug.Log($"start angle is: {Data.startAngle}");
         }
         Data.SaveData = true;
     }
@@ -98,10 +105,8 @@ public class HeadLocation : MonoBehaviour
         if (shouldUpdatePosition && Time.time >= nextUpdateTime)
         {
             currentPosition = Camera.main.transform.forward;
-            //Debug.Log($"current position: {currentPosition}");
             Vector3 D1 = new Vector3(0,0,1);
             currentAngle = AngleFromVector(D1, currentPosition);
-            //Debug.Log($"current angle: {currentAngle}");
             currentTime = Time.time;
             float timeDifference = currentTime - startTime;
 
@@ -117,14 +122,18 @@ public class HeadLocation : MonoBehaviour
                      timeDifference
                  ));
 
+                if (Mathf.Abs(currentAngle - lastSentAngle) > 3f)
+                {
+                    SendAngleMarker(currentAngle);
+                    lastSentAngle = currentAngle;
+                }
+
                 if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 4f)
                 {
                     matchingSamples++;
-                    //Debug.Log($"matching Samples: {matchingSamples}");
                     if (matchingSamples >= 16)
                     {
                         matchingSamples = 0;
-                        //Debug.Log($"matching Samples: {matchingSamples}");
                         Data.SaveData = false;
                         OnSameLocation?.Invoke(this, EventArgs.Empty);
                     }
@@ -142,7 +151,6 @@ public class HeadLocation : MonoBehaviour
     private void UpdateButterflyAngle(object sender, Data.ButterEventArgs e)
     {
         currentButterflyAngle = e.ButterAngle;
-        //Debug.Log($"current BUTTER angle: {currentButterflyAngle}");
     }
 
     private float AngleFromVector(Vector3 direction1, Vector3 direction2)
@@ -155,7 +163,14 @@ public class HeadLocation : MonoBehaviour
         {
             angleInXZPlane += 360;
         }
-        //Debug.Log($"angle In XZ: {angleInXZPlane}");
         return angleInXZPlane;
+    }
+
+    private void SendAngleMarker(float angle)
+    {
+        if (markerStream != null)
+        {
+            markerStream.Write(angle);
+        }
     }
 }

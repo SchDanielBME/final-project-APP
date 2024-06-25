@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\SelectScene.cs" />
     <Compile Include="Assets\Scripts\RandomNubers.cs" />
+    <Compile Include="Assets\Scripts\CustomLSLMarkerStream.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\Data.cs" />
     <Compile Include="Assets\Scripts\VR_Recorder.cs" />
@@ -1165,9 +1166,17 @@
       <Project>{01C05631-112A-12B6-FD34-6CC9C294C802}</Project>
       <Name>Unity.XR.Interaction.Toolkit.Samples.DeviceSimulator</Name>
     </ProjectReference>
+    <ProjectReference Include="labstreaminglayer.LSL4Unity.Runtime.csproj">
+      <Project>{4B66FBBB-FF00-0BC1-134A-472DC1595852}</Project>
+      <Name>labstreaminglayer.LSL4Unity.Runtime</Name>
+    </ProjectReference>
     <ProjectReference Include="Unity.XR.Interaction.Toolkit.Samples.StarterAssets.csproj">
       <Project>{448F74B3-9501-B853-AABA-B299AEC17FD4}</Project>
       <Name>Unity.XR.Interaction.Toolkit.Samples.StarterAssets</Name>
+    </ProjectReference>
+    <ProjectReference Include="labstreaminglayer.LSL4Unity.Editor.csproj">
+      <Project>{6808C040-9BC1-35B2-6155-8721B1760036}</Project>
+      <Name>labstreaminglayer.LSL4Unity.Editor</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

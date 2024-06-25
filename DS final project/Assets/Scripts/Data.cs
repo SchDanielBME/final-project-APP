@@ -52,13 +52,14 @@ public class Data : MonoBehaviour
     public static bool SaveData = false;
     private bool waitingForEndPosition = true;
 
-
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
     private float tempAngleError;
     private float tempResult;
     private float tempStartTime;
-    private TableRow lastAddedRow; 
+    private TableRow lastAddedRow;
+
+    private CustomLSLMarkerStream markerStream;
 
 
     public event EventHandler <CurrentEventArgs> OnCurentScenes;
@@ -147,8 +148,11 @@ public class Data : MonoBehaviour
         location.OnPositionSampled += SaveDataRow;
         location.OnSameLocation += SceneManager2;
 
-        //leftLaser = leftController.GetComponent<LineRenderer>();
-       // rightLaser = rightController.GetComponent<LineRenderer>();
+        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
+        if (markerStream == null)
+        {
+            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
+        }
     }
     private void ComponentAnglesOrder(object sender, RandomNubers.AngelsEventArgs e)
     {
@@ -195,9 +199,13 @@ public class Data : MonoBehaviour
         Debug.Log($"SceneManager IN");
         if (!waitingForEndPosition)
         {
-            //Debug.Log($"Now angles List: {NowAngles}");
             ButterflyLocation(NowAngles, direction, startAngle);
             butterfly.SetActive(true);
+
+            int sceneIndex = ScenesOreder[currentSceneIndex];
+            int angleIndex = NowAngles [currentAngleIndex];
+            int startMarker = sceneIndex * 100000 + angleIndex * 10000;
+            markerStream.Write(startMarker);
         }
     }
 
@@ -205,12 +213,16 @@ public class Data : MonoBehaviour
     {
         if (!SaveData)
         {
+            int sceneIndex = ScenesOreder[currentSceneIndex];
+            int angleIndex = NowAngles[currentAngleIndex];
+            int endMarker = sceneIndex * 100000 + angleIndex * 10000 + 1000;
+            markerStream.Write(endMarker);
+
             butterfly.SetActive(false);
             diractionPanel.SetActive(false);
             rightText.SetActive(false);
             leftText.SetActive(false);
             currentAngleIndex++;
-            //Debug.Log($"current Angle Index: {currentAngleIndex}");
             BeginNextProcess();
         }
     }
@@ -219,9 +231,7 @@ public class Data : MonoBehaviour
     {
       
         float tempButterAngle = angels[anglesList[currentAngleIndex]-1]; // Assuming this is correct, please verify
-        //Debug.Log($"Needed Butter Angle angle is: {tempButterAngle}");
         string currentDirection = direction[anglesList[currentAngleIndex] - 1];
-        //Debug.Log($"current Direction is: {currentDirection}");
 
         float tempButterAngleRefSP;
         if (currentDirection == "right")
@@ -253,12 +263,9 @@ public class Data : MonoBehaviour
         float y = 1.2f;
         float z = radius * Mathf.Cos(tempButterAngleRefSPRad) - 10.5f;  // Ensure this is the correct position reference
 
-        // Set the new position
         Vector3 newPosition = new Vector3(x, y, z);
-        //Debug.Log($"butterfly location: {newPosition}");
         butterfly.transform.position = newPosition;
 
-        // Trigger the event
         ButterflyAngleUpdated?.Invoke(this, new ButterEventArgs(tempButterAngleRefSP));
         Debug.Log($"butterfly angle is: {tempButterAngleRefSP}");
         SaveData = true;

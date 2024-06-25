@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.labstreaminglayer.lsl4unity": {
+      "version": "file:C:/Users/schmidtd/Documents/LSL4Unity",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.burst": {
       "version": "1.8.15",
       "depth": 1,
