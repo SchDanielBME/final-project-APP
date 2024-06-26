@@ -61,36 +61,29 @@ public class Data : MonoBehaviour
 
     private CustomLSLMarkerStream markerStream;
 
-
     public event EventHandler <CurrentEventArgs> OnCurentScenes;
     public class CurrentEventArgs : EventArgs
     {
         public int CurrentSceneNum { get; }
-
-
         public CurrentEventArgs(int SceneNum)
         {
             CurrentSceneNum = SceneNum;
         }
     }
 
-
     public event EventHandler<ButterEventArgs> ButterflyAngleUpdated;
     public class ButterEventArgs : EventArgs
     {
         public float ButterAngle { get; }
-
-
         public ButterEventArgs(float butterAngle)
         {
             ButterAngle = butterAngle;
         }
     }
 
-
     public event EventHandler StartToSample;
     public event EventHandler AskForStartAngle;
-
+    
 
     [System.Serializable] 
     public class TableRow
@@ -219,9 +212,6 @@ public class Data : MonoBehaviour
             markerStream.Write(endMarker);
 
             butterfly.SetActive(false);
-            diractionPanel.SetActive(false);
-            rightText.SetActive(false);
-            leftText.SetActive(false);
             currentAngleIndex++;
             BeginNextProcess();
         }
@@ -239,13 +229,18 @@ public class Data : MonoBehaviour
             tempButterAngleRefSP = startAngle + tempButterAngle;
             diractionPanel.SetActive(true);
             rightText.SetActive(true);
+            markerStream.Write(22222222); // panel right on
+
         }
         else
         {
             tempButterAngleRefSP = startAngle - tempButterAngle;
             diractionPanel.SetActive(true);
             leftText.SetActive(true);
+            markerStream.Write(33333333); // panel left on
         }
+
+        StartCoroutine(TurnOffDirectionPanel());
 
         if (tempButterAngleRefSP < 0)
         {
@@ -271,6 +266,15 @@ public class Data : MonoBehaviour
         SaveData = true;
     }
 
+    private IEnumerator TurnOffDirectionPanel()
+    {
+        yield return new WaitForSeconds(3);
+        diractionPanel.SetActive(false);
+        rightText.SetActive(false);
+        leftText.SetActive(false);
+        markerStream.Write(44444444); //panel off
+
+    }
 
     private void SaveDataRow(object sender, HeadLocation.PositionSampledEventArgs e)
     {

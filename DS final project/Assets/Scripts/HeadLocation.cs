@@ -75,11 +75,14 @@ public class HeadLocation : MonoBehaviour
 
     private void OnDisable()
     {
-        Data dataInfo = data.GetComponent<Data>();
-        if (dataInfo != null)
+        if (data != null)
         {
-            dataInfo.StartToSample -= StartSampling;
-            dataInfo.ButterflyAngleUpdated -= UpdateButterflyAngle;
+            Data dataInfo = data.GetComponent<Data>();
+            if (dataInfo != null)
+            {
+                dataInfo.StartToSample -= StartSampling;
+                dataInfo.ButterflyAngleUpdated -= UpdateButterflyAngle;
+            }
         }
     }
 
