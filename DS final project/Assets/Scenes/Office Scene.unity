@@ -15774,6 +15774,41 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chair (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248565767371373424, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1248565767371373424, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_StaticEditorFlags
+      value: 127
+      objectReference: {fileID: 0}
+    - target: {fileID: 6141271618066608664, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_ReceiveGI
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6141271618066608664, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6141271618066608664, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_MotionVectors
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6141271618066608664, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_DynamicOccludee
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6141271618066608664, guid: abd02d7f5fc19cb4786c10eee32c767e,
+        type: 3}
+      propertyPath: m_StitchLightmapSeams
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6386995502162228934, guid: abd02d7f5fc19cb4786c10eee32c767e,
         type: 3}
       propertyPath: m_LocalScale.x

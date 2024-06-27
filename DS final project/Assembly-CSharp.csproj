@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\RandomNubers.cs" />
     <Compile Include="Assets\Scripts\CustomLSLMarkerStream.cs" />
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
+    <Compile Include="Assets\Scripts\LSLHelper.cs" />
     <Compile Include="Assets\Scripts\Data.cs" />
     <Compile Include="Assets\Scripts\VR_Recorder.cs" />
     <Compile Include="Assets\Scripts\HeadLocation.cs" />

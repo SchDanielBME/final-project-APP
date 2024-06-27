@@ -1,5 +1,6 @@
 using UnityEngine;
 using LSL;
+using System;
 
 public class CustomLSLMarkerStream : MonoBehaviour
 {
@@ -25,5 +26,10 @@ public class CustomLSLMarkerStream : MonoBehaviour
     {
         float[] sample = new float[1] { marker };
         outlet.push_sample(sample);
+    }
+    public void PullData(IntPtr inlet, float[,] data_buffer, double[] timestamp_buffer, double timeout)
+    {
+        int numPulled = LSLHelper.PullChunk(inlet, data_buffer, timestamp_buffer, timeout);
+        Debug.Log("Number of samples pulled: " + numPulled);
     }
 }

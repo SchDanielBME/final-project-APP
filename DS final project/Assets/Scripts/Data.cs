@@ -51,6 +51,7 @@ public class Data : MonoBehaviour
     float tempButterAngleRefSP;
     public static bool SaveData = false;
     private bool waitingForEndPosition = true;
+    private float butterHigh = 1.2f;
 
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
@@ -140,6 +141,7 @@ public class Data : MonoBehaviour
         HeadLocation location = headLocation.GetComponent<HeadLocation>();
         location.OnPositionSampled += SaveDataRow;
         location.OnSameLocation += SceneManager2;
+        location.ButterHighCalculated += OnButterHighCalculated;
 
         markerStream = FindObjectOfType<CustomLSLMarkerStream>();
         if (markerStream == null)
@@ -156,6 +158,11 @@ public class Data : MonoBehaviour
 
         AllTheAngles = new int[][] { FirstAngles, SecondAngles, ThirdAngles, FourthAngles };
         Debug.Log("Angles Order called");
+    }
+
+    private void OnButterHighCalculated(object sender, HeadLocation.ButterHighEventArgs e)
+    {
+        butterHigh = e.ButterHigh;
     }
 
     private void ComponentAScenesOrder(object sender, RandomNubers.ScenesEventArgs s)
@@ -255,7 +262,7 @@ public class Data : MonoBehaviour
         float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
         float radius = 2.5f;
         float x = radius * Mathf.Sin(tempButterAngleRefSPRad);
-        float y = 1.2f;
+        float y = butterHigh - 0.1f;
         float z = radius * Mathf.Cos(tempButterAngleRefSPRad) - 10.5f;  // Ensure this is the correct position reference
 
         Vector3 newPosition = new Vector3(x, y, z);
@@ -307,7 +314,6 @@ public class Data : MonoBehaviour
         DataTable.Add(lastAddedRow);
     }
    
-
     public void ChangeSceneName()
     {
         switch (current[0])

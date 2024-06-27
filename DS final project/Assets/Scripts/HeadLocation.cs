@@ -7,11 +7,15 @@ public class HeadLocation : MonoBehaviour
     [SerializeField] private GameObject data;
 
     public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
+    public event EventHandler<ButterHighEventArgs> ButterHighCalculated;
+
     public event EventHandler OnSameLocation;
 
 
     private Vector3 startPosition;
     private Vector3 currentPosition;
+    private Vector3 currentPosition2;
+    private float butterHigh;
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
@@ -23,6 +27,15 @@ public class HeadLocation : MonoBehaviour
 
     private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
+    public class ButterHighEventArgs : EventArgs
+    {
+        public float ButterHigh { get; }
+
+        public ButterHighEventArgs(float butterHigh)
+        {
+            ButterHigh = butterHigh;
+        }
+    }
     public class PositionSampledEventArgs : EventArgs
     {
         public Vector3 StartPosition { get; }
@@ -90,6 +103,9 @@ public class HeadLocation : MonoBehaviour
     {
         shouldUpdatePosition = true;
         nextUpdateTime = Time.time;
+        currentPosition2 = Camera.main.transform.position;
+        butterHigh = currentPosition2.y;
+        ButterHighCalculated?.Invoke(this, new ButterHighEventArgs(butterHigh));
     }
 
     private void TakeStartPose(object sender, EventArgs e)
