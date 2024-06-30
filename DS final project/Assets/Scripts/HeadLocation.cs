@@ -24,6 +24,7 @@ public class HeadLocation : MonoBehaviour
     private float startTime;
     private float currentButterflyAngle;
     private int matchingSamples = 0;
+    private int flagCenter = 0;
 
     private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
@@ -115,8 +116,18 @@ public class HeadLocation : MonoBehaviour
             startPosition = currentPosition;
             startTime = currentTime;
             Data.startAngle = currentAngle;
+            if (flagCenter < 1)
+            {
+                Vector3 currentCenter = Camera.main.transform.position;
+                Data.startCenterX = currentCenter.x;
+                Debug.Log($"startCenterX: {Data.startCenterX}");
+                Data.startCenterZ = currentCenter.z;
+                Debug.Log($"startCenterZ: {Data.startCenterZ}");
+                flagCenter = 1;
+            }
         }
         Data.SaveData = true;
+        flagCenter = 0;
     }
 
     private void Update()
@@ -141,13 +152,7 @@ public class HeadLocation : MonoBehaviour
                      timeDifference
                  ));
 
-                if (Mathf.Abs(currentAngle - lastSentAngle) > 3f)
-                {
-                    SendAngleMarker(currentAngle);
-                    lastSentAngle = currentAngle;
-                }
-
-                if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 4f)
+                if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 5f)
                 {
                     matchingSamples++;
                     if (matchingSamples >= 16)
@@ -161,6 +166,13 @@ public class HeadLocation : MonoBehaviour
                 {
                     matchingSamples = 0;
                 }
+            }
+
+            if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
+            {
+                double roundedAngle = Math.Round((double)currentAngle);
+                SendAngleMarker((float)roundedAngle);
+                lastSentAngle = currentAngle;
             }
 
             nextUpdateTime = Time.time + updateInterval;
