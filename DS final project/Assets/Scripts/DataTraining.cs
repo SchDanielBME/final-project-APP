@@ -177,7 +177,7 @@ public class DataTraining : MonoBehaviour
         OnCurentScenes?.Invoke(this, new CurrentEventArgs(ScenesOreder[currentSceneIndex]));
         newScrenePanel.SetActive(true);
         EnableLasers();
-        ScreneText.text = "You are now in the " + currentScreneName + " let's start catching butterflies";
+        ScreneText.text = "You are now " + currentScreneName + " let's start catching butterflies";
         ScreneButton.onClick.AddListener(OnScreneButtonClicked);
     }
 
@@ -311,10 +311,10 @@ public class DataTraining : MonoBehaviour
         switch (current[0])
         {
             case 1:
-                currentScreneName = "XXXXXXXXX"; //
+                currentScreneName = "between the ancient city walls"; //
                 break;
             case 2:
-                currentScreneName = "YYYYYYYYY"; //
+                currentScreneName = "in the ancient city"; //
                 break;
         }
     }

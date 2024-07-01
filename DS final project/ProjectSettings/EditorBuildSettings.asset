@@ -14,6 +14,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Office Scene.unity
     guid: 307cdecae12d936448f30b760115647e
+  - enabled: 1
+    path: Assets/Scenes/Training Scene.unity
+    guid: 9d7254c7dbb91d14db7585e74ce236b2
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 834f0ff3ad10d204b800fe69582f75d3,
       type: 2}

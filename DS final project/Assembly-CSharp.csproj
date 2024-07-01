@@ -68,6 +68,7 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\Scripts\LSLHelper.cs" />
     <Compile Include="Assets\Scripts\Data.cs" />
+    <Compile Include="Assets\Scripts\mainMenu.cs" />
     <Compile Include="Assets\Scripts\RandomNubersTraining.cs" />
     <Compile Include="Assets\FantasyEnvironments\Environments\Town\Scripts\Door.cs" />
     <Compile Include="Assets\Scripts\HeadLocationTraining.cs" />
