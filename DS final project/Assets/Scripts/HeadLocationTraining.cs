@@ -19,7 +19,7 @@ public class HeadLocationTraining : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 8f; // 8Hz
+    private float updateInterval = 1f / 10f; // 8Hz
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;
@@ -153,7 +153,7 @@ public class HeadLocationTraining : MonoBehaviour
                 if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 5f)
                 {
                     matchingSamples++;
-                    if (matchingSamples >= 16)
+                    if (matchingSamples >= 20)
                     {
                         matchingSamples = 0;
                         DataTraining.SaveData = false;

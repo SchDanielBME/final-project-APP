@@ -5,6 +5,7 @@ using System.IO;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class DataTraining : MonoBehaviour
 {
@@ -371,6 +372,7 @@ public class DataTraining : MonoBehaviour
     {
         //markerStream.Write(99999999);
         //Application.Quit(); // back o the main menu
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Main Scene");
     }
 
     private void EnableLasers()
