@@ -19,7 +19,7 @@ public class HeadLocationTraining : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 10f; // 8Hz
+    private float updateInterval = 1f / 10f; // 10Hz
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;

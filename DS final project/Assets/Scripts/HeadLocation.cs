@@ -5,6 +5,9 @@ using UnityEngine;
 public class HeadLocation : MonoBehaviour
 {
     [SerializeField] private GameObject data;
+    [SerializeField] private GameObject yellowLight;
+    [SerializeField] private GameObject redLight;
+
 
     public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
     public event EventHandler<ButterHighEventArgs> ButterHighCalculated;
@@ -19,12 +22,16 @@ public class HeadLocation : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 8f; // 8Hz
+    private float updateInterval = 1f / 10f; // 10Hz
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;
     private int matchingSamples = 0;
     private int flagCenter = 0;
+    private float lastAngle = 0;
+    private float lastTime = 0;
+    private int speedExceedCounter = 0;
+    private const int speedThresholdSamples = 10;
 
     private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
@@ -119,10 +126,11 @@ public class HeadLocation : MonoBehaviour
             if (flagCenter < 1)
             {
                 Vector3 currentCenter = Camera.main.transform.position;
+                Vector3 currentRotation = Camera.main.transform.rotation.eulerAngles;
+
                 Data.startCenterX = currentCenter.x;
-                Debug.Log($"startCenterX: {Data.startCenterX}");
                 Data.startCenterZ = currentCenter.z;
-                Debug.Log($"startCenterZ: {Data.startCenterZ}");
+                Data.startCenterY = currentCenter.y;
                 flagCenter = 1;
             }
         }
@@ -175,7 +183,35 @@ public class HeadLocation : MonoBehaviour
                 lastSentAngle = currentAngle;
             }
 
-            nextUpdateTime = Time.time + updateInterval;
+            // Calculate angular velocity
+            float angleDifference = Mathf.Abs(currentAngle - lastAngle);
+            float timeDiff = currentTime - lastTime;
+            float angularVelocity = angleDifference / timeDiff; // Degrees per second
+
+            // Convert angular velocity to km/h
+            float angularVelocityKmH = angularVelocity * 3600 / 1000;
+            if (angularVelocityKmH > 3.5f)
+        {
+            speedExceedCounter++;
+            if (speedExceedCounter > speedThresholdSamples)
+            {
+                redLight.SetActive(true);
+                markerStream.Write(55555555);
+                yellowLight.SetActive(false);
+            }
+        }
+        else
+        {
+            speedExceedCounter = 0;
+            redLight.SetActive(false);
+            markerStream.Write(66666666);
+            yellowLight.SetActive(true);
+        }
+
+        lastAngle = currentAngle;
+        lastTime = currentTime;
+
+         nextUpdateTime = Time.time + updateInterval;
         }
     }
 

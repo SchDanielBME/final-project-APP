@@ -23,6 +23,7 @@ public class Data : MonoBehaviour
     [SerializeField] private int[] current = { 0, 0 };
     private string[] ScenesNames = { "R0", "R1", "S0", "S1" };
     private string currentScreneName;
+    private string currentScreneName2Show;
     private DateTime startTime;
     private string outputFileName;
     private string filePath;
@@ -49,6 +50,7 @@ public class Data : MonoBehaviour
     public static float startAngle = 0;
     public static float startCenterX = 0;
     public static float startCenterZ = 0;
+    public static float startCenterY = 0;
     float tempButterAngle;
     float tempButterAngleRefSP;
     public static bool SaveData = false;
@@ -183,7 +185,7 @@ public class Data : MonoBehaviour
         OnCurentScenes?.Invoke(this, new CurrentEventArgs(ScenesOreder[currentSceneIndex]));
         newScrenePanel.SetActive(true);
         EnableLasers();
-        ScreneText.text = "You are now in the " + currentScreneName + " let's start catching butterflies";
+        ScreneText.text = "You are now in " + currentScreneName2Show + " let's start catching butterflies";
         ScreneButton.onClick.AddListener(OnScreneButtonClicked);
     }
 
@@ -198,7 +200,6 @@ public class Data : MonoBehaviour
     {
         AskForStartAngle?.Invoke(this, EventArgs.Empty);
         waitingForEndPosition = false;
-        Debug.Log($"SceneManager IN");
         if (!waitingForEndPosition)
         {
             ButterflyLocation(NowAngles, direction, startAngle);
@@ -231,8 +232,20 @@ public class Data : MonoBehaviour
       
         float tempButterAngle = angels[anglesList[currentAngleIndex]-1]; // Assuming this is correct, please verify
         string currentDirection = direction[anglesList[currentAngleIndex] - 1];
-
         float tempButterAngleRefSP;
+
+        float tempPanelAngle = startAngle * Mathf.Deg2Rad;
+        float radius = 3f;
+        float xP = radius * Mathf.Sin(tempPanelAngle) + startCenterX;
+        float yP = startCenterY + 0.3f;
+        float zP = radius * Mathf.Cos(tempPanelAngle) + startCenterZ;
+        Vector3 PanelPosition = new Vector3(xP, yP, zP);
+        diractionPanel.transform.position = PanelPosition;
+
+        Vector3 directionToCenter = new Vector3(startCenterX, startCenterY, startCenterZ) - PanelPosition;
+        Quaternion panelRotation = Quaternion.LookRotation(directionToCenter);
+        diractionPanel.transform.rotation = panelRotation;
+
         if (currentDirection == "right")
         {
             tempButterAngleRefSP = startAngle + tempButterAngle;
@@ -249,6 +262,8 @@ public class Data : MonoBehaviour
             markerStream.Write(33333333); // panel left on
         }
 
+        Debug.Log("direction: " + currentDirection);
+
         StartCoroutine(TurnOffDirectionPanel());
 
         if (tempButterAngleRefSP < 0)
@@ -262,13 +277,12 @@ public class Data : MonoBehaviour
         }
 
         float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
-        float radius = 3f;
-        float x = radius * Mathf.Sin(tempButterAngleRefSPRad) + startCenterX;
+        float radius2 = 3f;
+        float x = radius2 * Mathf.Sin(tempButterAngleRefSPRad) + startCenterX;
         float y = butterHigh - 0.1f;
         float z = radius * Mathf.Cos(tempButterAngleRefSPRad) + startCenterZ;  // Ensure this is the correct position reference
 
         Vector3 newPosition = new Vector3(x, y, z);
-        Debug.Log($"butterfly POSE: {newPosition}");
         butterfly.transform.position = newPosition;
 
         ButterflyAngleUpdated?.Invoke(this, new ButterEventArgs(tempButterAngleRefSP));
@@ -282,7 +296,6 @@ public class Data : MonoBehaviour
         rightText.SetActive(false);
         leftText.SetActive(false);
         markerStream.Write(44444444); //panel off
-
     }
 
     private void SaveDataRow(object sender, HeadLocation.PositionSampledEventArgs e)
@@ -321,15 +334,19 @@ public class Data : MonoBehaviour
         switch (current[0])
         {
             case 1:
+                currentScreneName2Show = "room 1";
                 currentScreneName = "empty square room";
                 break;
             case 2:
+                currentScreneName2Show = "room 2";
                 currentScreneName = "furnished square room";
                 break;
             case 3:
+                currentScreneName2Show = "room 3";
                 currentScreneName = "empty round room";
                 break;
             case 4:
+                currentScreneName2Show = "empty square room";
                 currentScreneName = "furnished round room";
                 break;
         }
@@ -376,7 +393,7 @@ public class Data : MonoBehaviour
         {
             foreach (TableRow row in DataTable)
             {
-                writer.WriteLine($"Scene: {row.screneName}, Sence Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Cuurent Position Vector: {row.currentPosition},  Cuurent Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
+                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
             }
         }
 
