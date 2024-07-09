@@ -56,6 +56,7 @@ public class Data : MonoBehaviour
     public static bool SaveData = false;
     private bool waitingForEndPosition = true;
     private float butterHigh = 1.2f;
+    public long unixStartTime = 0;
 
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
@@ -173,6 +174,12 @@ public class Data : MonoBehaviour
     {
         ScenesOreder = s.Order;
         Debug.Log("Scenes Order called");
+        unixStartTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            writer.WriteLine($"unix time at the beginning of the experiment is: {unixStartTime}");
+        }
 
         StartToSample?.Invoke(this, EventArgs.Empty);
         TopManager();

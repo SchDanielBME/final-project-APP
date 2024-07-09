@@ -22,7 +22,7 @@ public class HeadLocation : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 10f; // 10Hz
+    private float updateInterval = 1f / 50f; // 20Hz
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;
@@ -31,7 +31,7 @@ public class HeadLocation : MonoBehaviour
     private float lastAngle = 0;
     private float lastTime = 0;
     private int speedExceedCounter = 0;
-    private const int speedThresholdSamples = 10;
+    private const int speedThresholdSamples = 50;
 
     private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
@@ -189,8 +189,8 @@ public class HeadLocation : MonoBehaviour
             float angularVelocity = angleDifference / timeDiff; // Degrees per second
 
             // Convert angular velocity to km/h
-            float angularVelocityKmH = angularVelocity * 3600 / 1000;
-            if (angularVelocityKmH > 3.5f)
+            //float angularVelocityKmH = angularVelocity * 3600 / 1000;
+            if (angularVelocity > 17f)
         {
             speedExceedCounter++;
             if (speedExceedCounter > speedThresholdSamples)

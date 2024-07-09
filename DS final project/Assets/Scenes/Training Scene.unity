@@ -6848,6 +6848,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   data: {fileID: 2069040988}
+  yellowLight: {fileID: 0}
+  redLight: {fileID: 0}
 --- !u!114 &1161342816
 MonoBehaviour:
   m_ObjectHideFlags: 0
