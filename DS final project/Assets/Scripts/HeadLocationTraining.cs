@@ -5,8 +5,10 @@ using UnityEngine;
 public class HeadLocationTraining : MonoBehaviour
 {
     [SerializeField] private GameObject data;
+    [SerializeField] private GameObject yellowLight;
+    [SerializeField] private GameObject redLight;
 
-    //public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
+    public event EventHandler<PositionSampledEventArgs> OnPositionSampled;
     public event EventHandler<ButterHighEventArgs> ButterHighCalculated;
 
     public event EventHandler OnSameLocation;
@@ -19,14 +21,18 @@ public class HeadLocationTraining : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 10f; // 10Hz
+    private float updateInterval = 1f / 50f; 
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;
     private int matchingSamples = 0;
     private int flagCenter = 0;
+    private float lastAngle = 0;
+    private float lastTime = 0;
+    private int speedExceedCounter = 0;
+    private const int speedThresholdSamples = 50;
 
-    //private CustomLSLMarkerStream markerStream;
+    private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
     public class ButterHighEventArgs : EventArgs
     {
@@ -37,29 +43,28 @@ public class HeadLocationTraining : MonoBehaviour
             ButterHigh = butterHigh;
         }
     }
-    //public class PositionSampledEventArgs : EventArgs
-    //{
-    //    public Vector3 StartPosition { get; }
-    //    public float StartAngle { get; }
-    //    public Vector3 CurrentPosition { get; }
-    //    public float CurrentAngle { get; }
-    //    public float CurrentTime { get; }
-    //    public float TimeDifference { get; }
-    //    public float CurrentButterflyAngle { get; }
+    public class PositionSampledEventArgs : EventArgs
+    {
+        public Vector3 StartPosition { get; }
+        public float StartAngle { get; }
+        public Vector3 CurrentPosition { get; }
+        public float CurrentAngle { get; }
+        public float CurrentTime { get; }
+        public float TimeDifference { get; }
+        public float CurrentButterflyAngle { get; }
 
 
-    //    //public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, float currentTime, float timeDifference)
-    //    //{
-    //    //    StartPosition = startPosition;
-    //    //    StartAngle = startAngle;
-    //    //    CurrentPosition = currentPosition;
-    //    //    CurrentAngle = currentAngle;
-    //    //    CurrentButterflyAngle = currentButterflyAngle;
-    //    //    CurrentTime = currentTime;
-    //    //    TimeDifference = timeDifference;
-    //    //}
-    //}
-
+        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, float currentTime, float timeDifference)
+        {
+            StartPosition = startPosition;
+            StartAngle = startAngle;
+            CurrentPosition = currentPosition;
+            CurrentAngle = currentAngle;
+            CurrentButterflyAngle = currentButterflyAngle;
+            CurrentTime = currentTime;
+            TimeDifference = timeDifference;
+        }
+    }
     private void Start()
     {
         DataTraining dataInfo = data.GetComponent<DataTraining>();
@@ -70,11 +75,11 @@ public class HeadLocationTraining : MonoBehaviour
             dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
         }
 
-        //markerStream = FindObjectOfType<CustomLSLMarkerStream>();
-        //if (markerStream == null)
-        //{
-        //    Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
-        //}
+        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
+        if (markerStream == null)
+        {
+            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
+        }
     }
 
     private void OnEnable()
@@ -119,8 +124,11 @@ public class HeadLocationTraining : MonoBehaviour
             if (flagCenter < 1)
             {
                 Vector3 currentCenter = Camera.main.transform.position;
+                Vector3 currentRotation = Camera.main.transform.rotation.eulerAngles;
+
                 DataTraining.startCenterX = currentCenter.x;
                 DataTraining.startCenterZ = currentCenter.z;
+                DataTraining.startCenterY = currentCenter.y; ;
                 flagCenter = 1;
             }
         }
@@ -140,20 +148,20 @@ public class HeadLocationTraining : MonoBehaviour
 
             if (DataTraining.SaveData)
             {
-                //OnPositionSampled?.Invoke(this, new PositionSampledEventArgs(
-                //     startPosition,
-                //     Data.startAngle,
-                //     currentPosition,
-                //     currentAngle,
-                //     currentButterflyAngle,
-                //     currentTime,
-                //     timeDifference
-                // ));
+                OnPositionSampled?.Invoke(this, new PositionSampledEventArgs(
+                     startPosition,
+                     DataTraining.startAngle,
+                     currentPosition,
+                     currentAngle,
+                     currentButterflyAngle,
+                     currentTime,
+                     timeDifference
+                 ));
 
                 if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 5f)
                 {
                     matchingSamples++;
-                    if (matchingSamples >= 20)
+                    if (matchingSamples >= 50)
                     {
                         matchingSamples = 0;
                         DataTraining.SaveData = false;
@@ -169,9 +177,45 @@ public class HeadLocationTraining : MonoBehaviour
             if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
             {
                 double roundedAngle = Math.Round((double)currentAngle);
-                //SendAngleMarker((float)roundedAngle);
+                SendAngleMarker((int)roundedAngle);
                 lastSentAngle = currentAngle;
             }
+            // Calculate angular velocity
+            float angleDifference = Mathf.Abs(currentAngle - lastAngle);
+            float timeDiff = currentTime - lastTime;
+            float angularVelocity = angleDifference / timeDiff; // Degrees per second
+
+            // Convert angular velocity to km/h
+            //float angularVelocityKmH = angularVelocity * 3600 / 1000;
+            int redFlag = 0;
+            if (angularVelocity > 17f)
+            {
+                speedExceedCounter++;
+                if (speedExceedCounter > speedThresholdSamples)
+                {
+                    redLight.SetActive(true);
+                    yellowLight.SetActive(false);
+                    if (speedExceedCounter == speedThresholdSamples + 1)
+                    {
+                        markerStream.Write(55555);
+                        redFlag = 1;
+                    }
+                }
+            }
+            else
+            {
+                speedExceedCounter = 0;
+                redLight.SetActive(false);
+                yellowLight.SetActive(true);
+                if (redFlag == 1)
+                {
+                    markerStream.Write(66666);
+                    redFlag = 0;
+                }
+            }
+
+            lastAngle = currentAngle;
+            lastTime = currentTime;
 
             nextUpdateTime = Time.time + updateInterval;
         }
@@ -195,11 +239,11 @@ public class HeadLocationTraining : MonoBehaviour
         return angleInXZPlane;
     }
 
-    //private void SendAngleMarker(float angle)
-    //{
-    //    if (markerStream != null)
-    //    {
-    //        markerStream.Write(angle);
-    //    }
-    //}
+    private void SendAngleMarker(int angle)
+    {
+        if (markerStream != null)
+        {
+            markerStream.Write(angle);
+        }
+    }
 }

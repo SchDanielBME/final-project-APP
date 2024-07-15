@@ -8,8 +8,8 @@ using UnityEngine.UI;
 
 public class Data : MonoBehaviour
 {
-    private int[] angels = { 288, 294, 300, 285, 291, 297 };
-    private string[] direction = { "right", "right", "right", "left", "left", "left" };
+    private int[] angels = { 288, 294, 300, 285, 291, 297};
+    private string[] direction = { "right", "right", "right", "left", "left", "left"};
     [SerializeField] private List<TableRow> DataTable = new List<TableRow>();
 
 
@@ -21,7 +21,7 @@ public class Data : MonoBehaviour
     private int[][] AllTheAngles;
     private int[] NowAngles;
     [SerializeField] private int[] current = { 0, 0 };
-    private string[] ScenesNames = { "R0", "R1", "S0", "S1" };
+    private string[] ScenesNames = { "R0", "R1", "S0", "S1"};
     private string currentScreneName;
     private string currentScreneName2Show;
     private DateTime startTime;
@@ -173,7 +173,6 @@ public class Data : MonoBehaviour
     private void ComponentAScenesOrder(object sender, RandomNubers.ScenesEventArgs s)
     {
         ScenesOreder = s.Order;
-        Debug.Log("Scenes Order called");
         unixStartTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         using (StreamWriter writer = new StreamWriter(filePath))
@@ -258,7 +257,8 @@ public class Data : MonoBehaviour
             tempButterAngleRefSP = startAngle + tempButterAngle;
             diractionPanel.SetActive(true);
             rightText.SetActive(true);
-            markerStream.Write(22222222); // panel right on
+            leftText.SetActive(false);
+            markerStream.Write(22222); // panel right on
 
         }
         else
@@ -266,7 +266,8 @@ public class Data : MonoBehaviour
             tempButterAngleRefSP = startAngle - tempButterAngle;
             diractionPanel.SetActive(true);
             leftText.SetActive(true);
-            markerStream.Write(33333333); // panel left on
+            rightText.SetActive(false);
+            markerStream.Write(33333); // panel left on
         }
 
         Debug.Log("direction: " + currentDirection);
@@ -302,7 +303,7 @@ public class Data : MonoBehaviour
         diractionPanel.SetActive(false);
         rightText.SetActive(false);
         leftText.SetActive(false);
-        markerStream.Write(44444444); //panel off
+        markerStream.Write(44444); //panel off
     }
 
     private void SaveDataRow(object sender, HeadLocation.PositionSampledEventArgs e)
@@ -353,7 +354,7 @@ public class Data : MonoBehaviour
                 currentScreneName = "empty round room";
                 break;
             case 4:
-                currentScreneName2Show = "empty square room";
+                currentScreneName2Show = "room 4";
                 currentScreneName = "furnished round room";
                 break;
         }
@@ -409,7 +410,7 @@ public class Data : MonoBehaviour
 
     private void EndGame()
     {
-        markerStream.Write(99999999);
+        markerStream.Write(99999);
         Debug.Log("Game ended.");
         Application.Quit();
     }

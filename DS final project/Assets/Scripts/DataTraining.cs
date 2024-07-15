@@ -9,8 +9,8 @@ using UnityEngine.SceneManagement;
 
 public class DataTraining : MonoBehaviour
 {
-    private int[] angels = { 250, 275 };
-    private string[] direction = { "right", "left" };
+    private int[] angels = { 250, 275};
+    private string[] direction = { "right", "left"};
     [SerializeField] private List<TableRow> DataTable = new List<TableRow>();
 
 
@@ -22,7 +22,9 @@ public class DataTraining : MonoBehaviour
     private int[][] AllTheAngles;
     private int[] NowAngles;
     [SerializeField] private int[] current = { 0, 0 };
+    private string[] ScenesNames = { "E", "H"};
     private string currentScreneName;
+    private string currentScreneName2Show;
     private DateTime startTime;
     private string outputFileName;
     private string filePath;
@@ -49,11 +51,13 @@ public class DataTraining : MonoBehaviour
     public static float startAngle = 0;
     public static float startCenterX = 0;
     public static float startCenterZ = 0;
+    public static float startCenterY = 0;
     float tempButterAngle;
     float tempButterAngleRefSP;
     public static bool SaveData = false;
     private bool waitingForEndPosition = true;
     private float butterHigh = 1.2f;
+    public long unixStartTime = 0;
 
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
@@ -62,7 +66,7 @@ public class DataTraining : MonoBehaviour
     private float tempStartTime;
     private TableRow lastAddedRow;
 
-    //private CustomLSLMarkerStream markerStream;
+    private CustomLSLMarkerStream markerStream;
 
     public event EventHandler <CurrentEventArgs> OnCurentScenes;
     public class CurrentEventArgs : EventArgs
@@ -86,9 +90,9 @@ public class DataTraining : MonoBehaviour
 
     public event EventHandler StartToSample;
     public event EventHandler AskForStartAngle;
-    
 
-    [System.Serializable] 
+
+    [System.Serializable]
     public class TableRow
     {
         public string screneName;
@@ -105,30 +109,30 @@ public class DataTraining : MonoBehaviour
         public float TotTime;
         public float TimeRefTask;
 
-        //public TableRow(string screneName, int screneIndex, int taskIndex, float butterAngleRefSP, float butterAngleInSpace, string direction,
-        //    Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, float totTime, float TimeRefTask)
-        //{
-        //    this.screneName = screneName;
-        //    this.screneIndex = screneIndex;
-        //    this.TaskIndex = taskIndex; 
-        //    this.butterAngleRefStartPosition = butterAngleRefSP; // butterfly angle 
-        //    this.butterAngleInSpace = butterAngleInSpace; // butterfly angle
-        //    this.direction = direction; //right or left
-        //    this.startPosition = startPosition;
-        //    this.startPositionAngle = startPositionAngle;
-        //    this.currentPosition = currentPosition;
-        //    this.currentPositionAngle = currentPositionAngle;
-        //    this.currentPositionAngleRefButter = currentPositionAngleRefButter;
-        //    this.TotTime = totTime; // from the beginning
-        //    this.TimeRefTask = TimeRefTask;
-        //}
+        public TableRow(string screneName, int screneIndex, int taskIndex, float butterAngleRefSP, float butterAngleInSpace, string direction,
+            Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, float totTime, float TimeRefTask)
+        {
+            this.screneName = screneName;
+            this.screneIndex = screneIndex;
+            this.TaskIndex = taskIndex;
+            this.butterAngleRefStartPosition = butterAngleRefSP; // butterfly angle 
+            this.butterAngleInSpace = butterAngleInSpace; // butterfly angle
+            this.direction = direction; //right or left
+            this.startPosition = startPosition;
+            this.startPositionAngle = startPositionAngle;
+            this.currentPosition = currentPosition;
+            this.currentPositionAngle = currentPositionAngle;
+            this.currentPositionAngleRefButter = currentPositionAngleRefButter;
+            this.TotTime = totTime; // from the beginning
+            this.TimeRefTask = TimeRefTask;
+        }
     }
 
     void Start()
     {
         startTime = DateTime.Now;
-        //outputFileName = "Data_" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
-        //filePath = Path.Combine(Application.persistentDataPath, outputFileName);
+        outputFileName = "Data_Training" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
+        filePath = Path.Combine(Application.persistentDataPath, outputFileName);
         thanksButton.onClick.AddListener(ThanksButtonClicked);
         newScrenePanel.SetActive(false);
         thanksPanel.SetActive(false);
@@ -141,15 +145,15 @@ public class DataTraining : MonoBehaviour
         randomNubers.OnGenerateScenes += ComponentAScenesOrder;
 
         HeadLocationTraining location = headLocation.GetComponent<HeadLocationTraining>();
-        //location.OnPositionSampled += SaveDataRow;
+        location.OnPositionSampled += SaveDataRow;
         location.OnSameLocation += SceneManager2;
         location.ButterHighCalculated += OnButterHighCalculated;
 
-        //markerStream = FindObjectOfType<CustomLSLMarkerStream>();
-        //if (markerStream == null)
-        //{
-        //    Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
-        //}
+        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
+        if (markerStream == null)
+        {
+            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
+        }
     }
     private void ComponentAnglesOrder(object sender, RandomNubersTraining.AngelsEventArgs e)
     {
@@ -167,6 +171,11 @@ public class DataTraining : MonoBehaviour
     private void ComponentAScenesOrder(object sender, RandomNubersTraining.ScenesEventArgs s)
     {
         ScenesOreder = s.Order;
+        unixStartTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            writer.WriteLine($"unix time at the beginning of the experiment is: {unixStartTime}");
+        }
         StartToSample?.Invoke(this, EventArgs.Empty);
         TopManager();
     }
@@ -198,10 +207,10 @@ public class DataTraining : MonoBehaviour
             ButterflyLocation(NowAngles, direction, startAngle);
             butterfly.SetActive(true);
 
-            //int sceneIndex = ScenesOreder[currentSceneIndex];
-            //int angleIndex = NowAngles [currentAngleIndex];
-            //int startMarker = sceneIndex * 100000 + angleIndex * 10000;
-            //markerStream.Write(startMarker);
+            int sceneIndex = ScenesOreder[currentSceneIndex];
+            int angleIndex = NowAngles[currentAngleIndex];
+            int startMarker = sceneIndex * 100000 + angleIndex * 10000;
+            markerStream.Write(startMarker);
         }
     }
 
@@ -209,10 +218,10 @@ public class DataTraining : MonoBehaviour
     {
         if (!SaveData)
         {
-            //int sceneIndex = ScenesOreder[currentSceneIndex];
-            //int angleIndex = NowAngles[currentAngleIndex];
-            //int endMarker = sceneIndex * 100000 + angleIndex * 10000 + 1;
-            //markerStream.Write(endMarker);
+            int sceneIndex = ScenesOreder[currentSceneIndex];
+            int angleIndex = NowAngles[currentAngleIndex];
+            int endMarker = sceneIndex * 100000 + angleIndex * 10000 + 1;
+            markerStream.Write(endMarker);
 
             butterfly.SetActive(false);
             currentAngleIndex++;
@@ -220,27 +229,45 @@ public class DataTraining : MonoBehaviour
         }
     }
 
+
     private void ButterflyLocation(int[] anglesList, string[] direction, float startAngle)
     {
-      
-        float tempButterAngle = angels[anglesList[currentAngleIndex]-1]; // Assuming this is correct, please verify
-        string currentDirection = direction[anglesList[currentAngleIndex] - 1];
 
+        float tempButterAngle = angels[anglesList[currentAngleIndex] - 1]; // Assuming this is correct, please verify
+        string currentDirection = direction[anglesList[currentAngleIndex] - 1];
         float tempButterAngleRefSP;
+
+        float tempPanelAngle = startAngle * Mathf.Deg2Rad;
+        float radius = 3f;
+        float xP = radius * Mathf.Sin(tempPanelAngle) + startCenterX;
+        float yP = startCenterY + 0.3f;
+        float zP = radius * Mathf.Cos(tempPanelAngle) + startCenterZ;
+        Vector3 PanelPosition = new Vector3(xP, yP, zP);
+        diractionPanel.transform.position = PanelPosition;
+
+        Vector3 directionToCenter = new Vector3(startCenterX, startCenterY, startCenterZ) - PanelPosition;
+        Quaternion panelRotation = Quaternion.LookRotation(directionToCenter);
+        diractionPanel.transform.rotation = panelRotation;
+
         if (currentDirection == "right")
         {
             tempButterAngleRefSP = startAngle + tempButterAngle;
             diractionPanel.SetActive(true);
             rightText.SetActive(true);
-            //markerStream.Write(22222222); 
+            leftText.SetActive(false);
+            markerStream.Write(22222); // panel right on
+
         }
         else
         {
             tempButterAngleRefSP = startAngle - tempButterAngle;
             diractionPanel.SetActive(true);
             leftText.SetActive(true);
-            //markerStream.Write(33333333); 
+            rightText.SetActive(false);
+            markerStream.Write(33333); // panel left on
         }
+
+        Debug.Log("direction: " + currentDirection);
 
         StartCoroutine(TurnOffDirectionPanel());
 
@@ -255,8 +282,8 @@ public class DataTraining : MonoBehaviour
         }
 
         float tempButterAngleRefSPRad = tempButterAngleRefSP * Mathf.Deg2Rad;
-        float radius = 3f;
-        float x = radius * Mathf.Sin(tempButterAngleRefSPRad) + startCenterX;
+        float radius2 = 3f;
+        float x = radius2 * Mathf.Sin(tempButterAngleRefSPRad) + startCenterX;
         float y = butterHigh - 0.1f;
         float z = radius * Mathf.Cos(tempButterAngleRefSPRad) + startCenterZ;  // Ensure this is the correct position reference
 
@@ -273,48 +300,50 @@ public class DataTraining : MonoBehaviour
         diractionPanel.SetActive(false);
         rightText.SetActive(false);
         leftText.SetActive(false);
-        //markerStream.Write(44444444); //panel off
+        markerStream.Write(44444); //panel off
     }
 
-    //private void SaveDataRow(object sender, HeadLocation.PositionSampledEventArgs e)
-    //{
-    //    Vector3 startPosition = e.StartPosition;
-    //    float startPositionAngle = e.StartAngle;
-    //    Vector3 currentPosition = e.CurrentPosition;
-    //    float currentPositionAngle = e.CurrentAngle;
-    //    float currentButterflyAngle = e.CurrentButterflyAngle;
-    //    float currentTime = e.CurrentTime;
-    //    float timeDifference = e.TimeDifference;
-    //    float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
-    //    float totalTime = (float)(DateTime.Now - startTime).TotalSeconds;
+    private void SaveDataRow(object sender, HeadLocationTraining.PositionSampledEventArgs e)
+    {
+        Vector3 startPosition = e.StartPosition;
+        float startPositionAngle = e.StartAngle;
+        Vector3 currentPosition = e.CurrentPosition;
+        float currentPositionAngle = e.CurrentAngle;
+        float currentButterflyAngle = e.CurrentButterflyAngle;
+        float currentTime = e.CurrentTime;
+        float timeDifference = e.TimeDifference;
+        float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
+        float totalTime = (float)(DateTime.Now - startTime).TotalSeconds;
 
-    //    lastAddedRow = new TableRow(
-    //        currentScreneName,
-    //        currentSceneIndex + 1,
-    //        currentAngleIndex +1,
-    //        angels[NowAngles[currentAngleIndex]-1],
-    //        currentButterflyAngle,
-    //        direction[NowAngles[currentAngleIndex] - 1],
-    //        startPosition,
-    //        startPositionAngle,
-    //        currentPosition,
-    //        currentPositionAngle,
-    //        currentPositionAngleRefButter,
-    //        totalTime,
-    //        timeDifference
-    //    );
+        lastAddedRow = new TableRow(
+            currentScreneName,
+            currentSceneIndex + 1,
+            currentAngleIndex + 1,
+            angels[NowAngles[currentAngleIndex] - 1],
+            currentButterflyAngle,
+            direction[NowAngles[currentAngleIndex] - 1],
+            startPosition,
+            startPositionAngle,
+            currentPosition,
+            currentPositionAngle,
+            currentPositionAngleRefButter,
+            totalTime,
+            timeDifference
+        );
 
-    //    DataTable.Add(lastAddedRow);
-    //}
+        DataTable.Add(lastAddedRow);
+    }
 
     public void ChangeSceneName()
     {
         switch (current[0])
         {
             case 1:
+                currentScreneName2Show = "erea 1";
                 currentScreneName = "between the ancient city walls"; //
                 break;
             case 2:
+                currentScreneName2Show = "erea 2";
                 currentScreneName = "in the ancient city"; //
                 break;
         }
@@ -336,7 +365,7 @@ public class DataTraining : MonoBehaviour
                Debug.Log("Lets Start The Next Level");
                currentAngleIndex = 0;
                currentSceneIndex++;
-               //SaveTablesToFile();
+               SaveTablesToFile();
                TopManager();
                return;
             }
@@ -351,28 +380,29 @@ public class DataTraining : MonoBehaviour
 
     private void ThanksButtonClicked()
     {
-        //SaveTablesToFile();
+        SaveTablesToFile();
         EndGame();
     }
 
-    //private void SaveTablesToFile()
-    //{
-    //    using (StreamWriter writer = new StreamWriter(filePath))
-    //    {
-    //        foreach (TableRow row in DataTable)
-    //        {
-    //            writer.WriteLine($"Scene: {row.screneName}, Sence Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Cuurent Position Vector: {row.currentPosition},  Cuurent Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
-    //        }
-    //    }
+    private void SaveTablesToFile()
+    {
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            foreach (TableRow row in DataTable)
+            {
+                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
+            }
+        }
 
-    //    Debug.Log("Tables saved to file: " + filePath);
-    //}
+        Debug.Log("Tables saved to file: " + filePath);
+    }
+
 
     private void EndGame()
     {
-        //markerStream.Write(99999999);
-        //Application.Quit(); // back o the main menu
-        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Main Scene");
+        markerStream.Write(99999);
+        Debug.Log("Game ended.");
+        Application.Quit();
     }
 
     private void EnableLasers()

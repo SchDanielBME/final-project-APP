@@ -16,15 +16,11 @@ public class CustomLSLMarkerStream : MonoBehaviour
         outlet = new StreamOutlet(streamInfo);
     }
 
-    public void Write(float marker)
-    {
-        float[] sample = new float[1] { marker };
-        outlet.push_sample(sample);
-    }
+
 
     public void Write(int marker)
     {
-        float[] sample = new float[1] { marker };
+        int[] sample = new int[1] { marker };
         outlet.push_sample(sample);
     }
     public void PullData(IntPtr inlet, float[,] data_buffer, double[] timestamp_buffer, double timeout)

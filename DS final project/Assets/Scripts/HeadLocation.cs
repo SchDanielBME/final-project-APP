@@ -22,7 +22,7 @@ public class HeadLocation : MonoBehaviour
     private float currentTime;
     private float currentAngle;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 50f; // 20Hz
+    private float updateInterval = 1f / 50f; 
     private float nextUpdateTime = 0f;
     private float startTime;
     private float currentButterflyAngle;
@@ -163,7 +163,7 @@ public class HeadLocation : MonoBehaviour
                 if (Mathf.Abs(currentAngle - currentButterflyAngle) <= 5f)
                 {
                     matchingSamples++;
-                    if (matchingSamples >= 16)
+                    if (matchingSamples >= 50)
                     {
                         matchingSamples = 0;
                         Data.SaveData = false;
@@ -179,7 +179,7 @@ public class HeadLocation : MonoBehaviour
             if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
             {
                 double roundedAngle = Math.Round((double)currentAngle);
-                SendAngleMarker((float)roundedAngle);
+                SendAngleMarker((int)roundedAngle);
                 lastSentAngle = currentAngle;
             }
 
@@ -190,23 +190,32 @@ public class HeadLocation : MonoBehaviour
 
             // Convert angular velocity to km/h
             //float angularVelocityKmH = angularVelocity * 3600 / 1000;
+            int redFlag = 0;
             if (angularVelocity > 17f)
-        {
-            speedExceedCounter++;
-            if (speedExceedCounter > speedThresholdSamples)
             {
-                redLight.SetActive(true);
-                markerStream.Write(55555555);
-                yellowLight.SetActive(false);
+                speedExceedCounter++;
+                if (speedExceedCounter > speedThresholdSamples)
+                {
+                    redLight.SetActive(true);
+                    yellowLight.SetActive(false);
+                    if (speedExceedCounter == speedThresholdSamples + 1)
+                    {
+                        markerStream.Write(55555);
+                        redFlag = 1;
+                    }
+                }
             }
-        }
-        else
-        {
-            speedExceedCounter = 0;
-            redLight.SetActive(false);
-            markerStream.Write(66666666);
-            yellowLight.SetActive(true);
-        }
+            else
+            {
+                speedExceedCounter = 0;
+                redLight.SetActive(false);
+                yellowLight.SetActive(true);
+                if (redFlag == 1)
+                {
+                    markerStream.Write(66666);
+                    redFlag = 0;
+                }
+            }
 
         lastAngle = currentAngle;
         lastTime = currentTime;
@@ -233,7 +242,7 @@ public class HeadLocation : MonoBehaviour
         return angleInXZPlane;
     }
 
-    private void SendAngleMarker(float angle)
+    private void SendAngleMarker(int angle)
     {
         if (markerStream != null)
         {
