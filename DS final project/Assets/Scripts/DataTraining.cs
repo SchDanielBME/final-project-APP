@@ -401,8 +401,7 @@ public class DataTraining : MonoBehaviour
     private void EndGame()
     {
         markerStream.Write(99999);
-        Debug.Log("Game ended.");
-        Application.Quit();
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync("Main Scene");
     }
 
     private void EnableLasers()

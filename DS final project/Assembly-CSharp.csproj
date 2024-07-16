@@ -73,6 +73,7 @@
     <Compile Include="Assets\FantasyEnvironments\Environments\Town\Scripts\Door.cs" />
     <Compile Include="Assets\Scripts\HeadLocationTraining.cs" />
     <Compile Include="Assets\Scripts\DataTraining.cs" />
+    <Compile Include="Assets\Scripts\RedLightTraining.cs" />
     <Compile Include="Assets\Scripts\VR_Recorder.cs" />
     <Compile Include="Assets\Scripts\HeadLocation.cs" />
   </ItemGroup>
