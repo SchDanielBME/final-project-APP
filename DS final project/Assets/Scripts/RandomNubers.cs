@@ -7,12 +7,6 @@ using UnityEngine;
 public class RandomNubers : MonoBehaviour
 {
     private int[] order = { 1, 2, 3, 4 };
-    private int first = 0;
-    private int second = 0;
-    private int third = 0;
-    private int fourth = 0;
-
-
     private int[] firstAnglesOrder = { 1, 2, 3, 4, 5, 6};
     private int[] secondAnglesOrder = { 1, 2, 3, 4, 5, 6};
     private int[] thirdAnglesOrder = {1, 2, 3, 4, 5, 6};
@@ -23,7 +17,6 @@ public class RandomNubers : MonoBehaviour
     public class ScenesEventArgs : EventArgs
     {
         public int[] Order { get;}
-
 
         public ScenesEventArgs(int[] order)
         {
@@ -38,8 +31,6 @@ public class RandomNubers : MonoBehaviour
         public int[] ThirdAngles { get; }
         public int[] FourthAngles { get; }
 
-
-
         public AngelsEventArgs(int[] firstAnglesOrder, int[] secondAnglesOrder, int[] thirdAnglesOrder, int[] fourthAngles)
         {
             FirstAngles = firstAnglesOrder;
@@ -49,26 +40,70 @@ public class RandomNubers : MonoBehaviour
         }
     }
 
-
     public void GenerrateOrder()
     {
-        ShuffleArry(order);
-        ShuffleArry(firstAnglesOrder);
-        ShuffleArry(secondAnglesOrder);
-        ShuffleArry(thirdAnglesOrder);
-        ShuffleArry(fourthAnglesOrder);
+        bool firstValid, secondValid, thirdValid, fourthValid;
+        do
+        {
+            ShuffleArray(firstAnglesOrder);
+            firstValid = CheckAnglesCoverage(ConvertToDegrees(firstAnglesOrder));
+        } while (!firstValid);
 
-        first = order[0];
-        second = order[1];
-        third = order[2];
-        fourth = order[3];
+        do
+        {
+            ShuffleArray(secondAnglesOrder);
+            secondValid = CheckAnglesCoverage(ConvertToDegrees(secondAnglesOrder));
+        } while (!secondValid);
+
+        do
+        {
+            ShuffleArray(thirdAnglesOrder);
+            thirdValid = CheckAnglesCoverage(ConvertToDegrees(thirdAnglesOrder));
+        } while (!thirdValid);
+
+        do
+        {
+            ShuffleArray(fourthAnglesOrder);
+            fourthValid = CheckAnglesCoverage(ConvertToDegrees(fourthAnglesOrder));
+        } while (!fourthValid);
+
 
         OnGenerateAngles?.Invoke(this, new AngelsEventArgs(firstAnglesOrder, secondAnglesOrder, thirdAnglesOrder, fourthAnglesOrder));
+        ShuffleArray(order);
         OnGenerateScenes?.Invoke(this, new ScenesEventArgs(order));
-    
     }
 
-    private void ShuffleArry(int[] arrary)
+
+    private int[] ConvertToDegrees(int[] anglesOrder)
+    {
+        return anglesOrder.Select(a => a switch
+        {
+            1 => 288,
+            2 => 294,
+            3 => 300,
+            4 => -285,
+            5 => -291,
+            6 => -297,
+            _ => 0
+        }).ToArray();
+    }
+
+    private bool CheckAnglesCoverage(int[] anglesOrder)
+    {
+        int currentAngle = 0;
+        HashSet<int> coveredAngles = new HashSet<int>();
+
+        foreach (int angle in anglesOrder)
+        {
+            for (int i = 0; i < Math.Abs(angle); i++)
+            {
+                coveredAngles.Add((currentAngle + (angle > 0 ? i : -i) + 360) % 360);
+            }
+            currentAngle = (currentAngle + angle + 360) % 360;
+        }
+        return coveredAngles.Count == 360; 
+    }
+    private void ShuffleArray(int[] arrary)
     {
         System.Random rand = new System.Random();
         for (int i = 0; i < arrary.Length; i++)

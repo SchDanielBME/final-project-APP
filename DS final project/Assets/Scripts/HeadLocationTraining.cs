@@ -20,6 +20,8 @@ public class HeadLocationTraining : MonoBehaviour
     private float butterHigh;
     private float currentTime;
     private float currentAngle;
+    private char inFOV;
+    private char isMarker;
     private bool shouldUpdatePosition = false;
     private float updateInterval = 1f / 50f; 
     private float nextUpdateTime = 0f;
@@ -52,15 +54,19 @@ public class HeadLocationTraining : MonoBehaviour
         public float CurrentTime { get; }
         public float TimeDifference { get; }
         public float CurrentButterflyAngle { get; }
+        public char InFOV { get; }
+        public char IsMarker { get; }
 
 
-        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, float currentTime, float timeDifference)
+        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, char inFOV, char isMarker, float currentTime, float timeDifference)
         {
             StartPosition = startPosition;
             StartAngle = startAngle;
             CurrentPosition = currentPosition;
             CurrentAngle = currentAngle;
             CurrentButterflyAngle = currentButterflyAngle;
+            InFOV = inFOV;
+            IsMarker = isMarker;
             CurrentTime = currentTime;
             TimeDifference = timeDifference;
         }
@@ -145,6 +151,20 @@ public class HeadLocationTraining : MonoBehaviour
             currentAngle = AngleFromVector(D1, currentPosition);
             currentTime = Time.time;
             float timeDifference = currentTime - startTime;
+            isMarker = 'X';
+
+            if (Math.Abs(currentButterflyAngle - currentAngle) <= 60)
+            {
+                inFOV = 'V';
+            }
+            else { inFOV = 'X'; }
+
+            if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
+            {
+                double roundedAngle = Math.Round((double)currentAngle);
+                SendAngleMarker((int)roundedAngle);
+                lastSentAngle = currentAngle;
+            }
 
             if (DataTraining.SaveData)
             {
@@ -154,6 +174,8 @@ public class HeadLocationTraining : MonoBehaviour
                      currentPosition,
                      currentAngle,
                      currentButterflyAngle,
+                     inFOV,
+                     isMarker,
                      currentTime,
                      timeDifference
                  ));
@@ -174,12 +196,7 @@ public class HeadLocationTraining : MonoBehaviour
                 }
             }
 
-            if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
-            {
-                double roundedAngle = Math.Round((double)currentAngle);
-                SendAngleMarker((int)roundedAngle);
-                lastSentAngle = currentAngle;
-            }
+
             // Calculate angular velocity
             float angleDifference = Mathf.Abs(currentAngle - lastAngle);
             float timeDiff = currentTime - lastTime;

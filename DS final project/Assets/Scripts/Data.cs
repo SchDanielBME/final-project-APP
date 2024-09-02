@@ -6,6 +6,18 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// markers legend:
+// startMarker = the butterfly place =  sceneIndex * 100000 + angleIndex * 10000 
+// endMarker = the butterfly disappear =  sceneIndex * 100000 + angleIndex * 10000 + 1
+// 22222 = panle right on
+// 33333 = panle left on
+// 44444 = panle off
+// 55555 = red light on
+// 66666 = ref light off
+// 99999 = end game
+// roundedAngle =  number between 0 to 359 = HD angle
+
+
 public class Data : MonoBehaviour
 {
     private int[] angels = { 288, 294, 300, 285, 291, 297};
@@ -105,11 +117,13 @@ public class Data : MonoBehaviour
         public Vector3 currentPosition;
         public float currentPositionAngle;
         public float currentPositionAngleRefButter;
+        public char InFOV;
+        public char IsMarker;
         public float TotTime;
         public float TimeRefTask;
 
         public TableRow(string screneName, int screneIndex, int taskIndex, float butterAngleRefSP, float butterAngleInSpace, string direction,
-            Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, float totTime, float TimeRefTask)
+            Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter,char inFOV, char isMarker, float totTime, float TimeRefTask)
         {
             this.screneName = screneName;
             this.screneIndex = screneIndex;
@@ -122,6 +136,8 @@ public class Data : MonoBehaviour
             this.currentPosition = currentPosition;
             this.currentPositionAngle = currentPositionAngle;
             this.currentPositionAngleRefButter = currentPositionAngleRefButter;
+            this.InFOV = inFOV;
+            this.IsMarker = isMarker;
             this.TotTime = totTime; // from the beginning
             this.TimeRefTask = TimeRefTask;
         }
@@ -132,6 +148,7 @@ public class Data : MonoBehaviour
         startTime = DateTime.Now;
         outputFileName = "Data_" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
         filePath = Path.Combine(Application.persistentDataPath, outputFileName);
+        Debug.Log(filePath);
         thanksButton.onClick.AddListener(ThanksButtonClicked);
         newScrenePanel.SetActive(false);
         thanksPanel.SetActive(false);
@@ -313,6 +330,8 @@ public class Data : MonoBehaviour
         Vector3 currentPosition = e.CurrentPosition;
         float currentPositionAngle = e.CurrentAngle;
         float currentButterflyAngle = e.CurrentButterflyAngle;
+        char inFOV = e.InFOV;
+        char isMarker = e.IsMarker; 
         float currentTime = e.CurrentTime;
         float timeDifference = e.TimeDifference;
         float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
@@ -330,6 +349,8 @@ public class Data : MonoBehaviour
             currentPosition,
             currentPositionAngle,
             currentPositionAngleRefButter,
+            inFOV,
+            isMarker,
             totalTime,
             timeDifference
         );
@@ -397,11 +418,11 @@ public class Data : MonoBehaviour
 
     private void SaveTablesToFile()
     {
-        using (StreamWriter writer = new StreamWriter(filePath))
+        using (StreamWriter writer = new StreamWriter(filePath, true))
         {
             foreach (TableRow row in DataTable)
             {
-                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
+                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Is butterfly in FOV? {row.InFOV}, Is there a marker? {row.IsMarker}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
             }
         }
 

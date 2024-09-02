@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 
 public class DataTraining : MonoBehaviour
 {
-    private int[] angels = { 250, 275};
+    private int[] angels = {250, 275};
     private string[] direction = { "right", "left"};
     [SerializeField] private List<TableRow> DataTable = new List<TableRow>();
 
@@ -106,11 +106,13 @@ public class DataTraining : MonoBehaviour
         public Vector3 currentPosition;
         public float currentPositionAngle;
         public float currentPositionAngleRefButter;
+        public char InFOV;
+        public char IsMarker;
         public float TotTime;
         public float TimeRefTask;
 
         public TableRow(string screneName, int screneIndex, int taskIndex, float butterAngleRefSP, float butterAngleInSpace, string direction,
-            Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, float totTime, float TimeRefTask)
+           Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, char inFOV, char isMarker, float totTime, float TimeRefTask)
         {
             this.screneName = screneName;
             this.screneIndex = screneIndex;
@@ -123,11 +125,11 @@ public class DataTraining : MonoBehaviour
             this.currentPosition = currentPosition;
             this.currentPositionAngle = currentPositionAngle;
             this.currentPositionAngleRefButter = currentPositionAngleRefButter;
+            this.InFOV = inFOV; this.IsMarker = isMarker;
             this.TotTime = totTime; // from the beginning
             this.TimeRefTask = TimeRefTask;
         }
     }
-
     void Start()
     {
         startTime = DateTime.Now;
@@ -310,6 +312,8 @@ public class DataTraining : MonoBehaviour
         Vector3 currentPosition = e.CurrentPosition;
         float currentPositionAngle = e.CurrentAngle;
         float currentButterflyAngle = e.CurrentButterflyAngle;
+        char inFOV = e.InFOV;
+        char isMarker = e.IsMarker;
         float currentTime = e.CurrentTime;
         float timeDifference = e.TimeDifference;
         float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
@@ -327,6 +331,8 @@ public class DataTraining : MonoBehaviour
             currentPosition,
             currentPositionAngle,
             currentPositionAngleRefButter,
+            inFOV,
+            isMarker,
             totalTime,
             timeDifference
         );
@@ -386,7 +392,7 @@ public class DataTraining : MonoBehaviour
 
     private void SaveTablesToFile()
     {
-        using (StreamWriter writer = new StreamWriter(filePath))
+        using (StreamWriter writer = new StreamWriter(filePath, true))
         {
             foreach (TableRow row in DataTable)
             {
