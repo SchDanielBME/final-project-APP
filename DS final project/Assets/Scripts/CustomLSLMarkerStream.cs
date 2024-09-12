@@ -10,13 +10,11 @@ public class CustomLSLMarkerStream : MonoBehaviour
     void Start()
     {
         // Define the stream info
-        streamInfo = new StreamInfo("UnityMarkerStream", "Markers", 1, LSL.LSL.IRREGULAR_RATE, channel_format_t.cf_float32, "unique12345");
+        streamInfo = new StreamInfo("UnityMarkerStream", "Markers", 1, LSL.LSL.IRREGULAR_RATE, channel_format_t.cf_int32, "unique12345");
 
         // Create a new outlet
         outlet = new StreamOutlet(streamInfo);
     }
-
-
 
     public void Write(int marker)
     {
