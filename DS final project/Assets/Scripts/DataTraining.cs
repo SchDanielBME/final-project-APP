@@ -108,11 +108,13 @@ public class DataTraining : MonoBehaviour
         public float currentPositionAngleRefButter;
         public char InFOV;
         public char IsMarker;
+        public string SampTime;
         public float TotTime;
         public float TimeRefTask;
 
         public TableRow(string screneName, int screneIndex, int taskIndex, float butterAngleRefSP, float butterAngleInSpace, string direction,
-           Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter, char inFOV, char isMarker, float totTime, float TimeRefTask)
+           Vector3 startPosition, float startPositionAngle, Vector3 currentPosition, float currentPositionAngle, float currentPositionAngleRefButter,
+           char inFOV, char isMarker, string sampleTime, float totTime, float TimeRefTask)
         {
             this.screneName = screneName;
             this.screneIndex = screneIndex;
@@ -127,14 +129,27 @@ public class DataTraining : MonoBehaviour
             this.currentPositionAngleRefButter = currentPositionAngleRefButter;
             this.InFOV = inFOV; this.IsMarker = isMarker;
             this.TotTime = totTime; // from the beginning
+            this.SampTime = sampleTime;
             this.TimeRefTask = TimeRefTask;
         }
     }
     void Start()
     {
         startTime = DateTime.Now;
-        outputFileName = "Data_Training" + startTime.ToString("yyyy MM dd _ HH mm ss") + ".txt";
+        int currentMinutes = startTime.Minute;
+        int currentSeconds = startTime.Second;
+        int timeMarker = currentMinutes * 100 + currentSeconds;
+        markerStream.Write(timeMarker);
+
+        outputFileName = "Data_Training" + startTime.ToString("yyyy MM dd _ HH mm ss fff") + ".txt";
         filePath = Path.Combine(Application.persistentDataPath, outputFileName);
+
+        unixStartTime = new DateTimeOffset(startTime).ToUnixTimeSeconds();
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            writer.WriteLine($"unix time at the beginning of the experiment is: {unixStartTime}");
+        }
+
         thanksButton.onClick.AddListener(ThanksButtonClicked);
         newScrenePanel.SetActive(false);
         thanksPanel.SetActive(false);
@@ -173,11 +188,6 @@ public class DataTraining : MonoBehaviour
     private void ComponentAScenesOrder(object sender, RandomNubersTraining.ScenesEventArgs s)
     {
         ScenesOreder = s.Order;
-        unixStartTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        using (StreamWriter writer = new StreamWriter(filePath))
-        {
-            writer.WriteLine($"unix time at the beginning of the experiment is: {unixStartTime}");
-        }
         StartToSample?.Invoke(this, EventArgs.Empty);
         TopManager();
     }
@@ -314,7 +324,8 @@ public class DataTraining : MonoBehaviour
         float currentButterflyAngle = e.CurrentButterflyAngle;
         char inFOV = e.InFOV;
         char isMarker = e.IsMarker;
-        float currentTime = e.CurrentTime;
+        DateTime currentTimeAndDate = e.CurrentTime;
+        string currentTime = currentTimeAndDate.ToString("HH:mm:ss");
         float timeDifference = e.TimeDifference;
         float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
         float totalTime = (float)(DateTime.Now - startTime).TotalSeconds;
@@ -333,6 +344,7 @@ public class DataTraining : MonoBehaviour
             currentPositionAngleRefButter,
             inFOV,
             isMarker,
+            currentTime,
             totalTime,
             timeDifference
         );
@@ -396,9 +408,11 @@ public class DataTraining : MonoBehaviour
         {
             foreach (TableRow row in DataTable)
             {
-                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Time: {row.TotTime}, Time From The Start Of The Task: {row.TimeRefTask}");
+                writer.WriteLine($"Scene: {row.screneName}, Scene Index: {row.screneIndex}, Task Index: {row.TaskIndex}, Relative butterfly angle: {row.butterAngleRefStartPosition}, Direction: {row.direction},Butterfly angle in space: {row.butterAngleInSpace}, Start Position Vector: {row.startPosition}, Start Position Angle Of The Task: {row.startPositionAngle}, Current Position Vector: {row.currentPosition},  Current Position Angle: {row.currentPositionAngle}, Angle Relative To Butterfly Position: {row.currentPositionAngleRefButter}, Is butterfly in FOV? {row.InFOV}, Is there a marker? {row.IsMarker}, Time: {row.TotTime}, Current Time: {row.SampTime}, Time From The Start Of The Task: {row.TimeRefTask}");
             }
         }
+
+        DataTable.Clear();
 
         Debug.Log("Tables saved to file: " + filePath);
     }

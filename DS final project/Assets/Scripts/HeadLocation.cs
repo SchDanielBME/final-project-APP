@@ -15,26 +15,27 @@ public class HeadLocation : MonoBehaviour
 
     public event EventHandler OnSameLocation;
 
-
+    private Camera mainCamera;
     private Vector3 startPosition;
     private Vector3 currentPosition;
     private Vector3 currentPosition2;
     private float butterHigh;
-    private float currentTime;
+    private DateTime currentTime;
     private float currentAngle;
     private char inFOV;
     private char isMarker;
     private bool shouldUpdatePosition = false;
-    private float updateInterval = 1f / 50f; 
-    private float nextUpdateTime = 0f;
-    private float startTime;
+    private float updateInterval = 1f / 50f;
+    private DateTime nextUpdateTime;
+    private DateTime startTime;
     private float currentButterflyAngle;
     private int matchingSamples = 0;
     private int flagCenter = 0;
     private float lastAngle = 0;
-    private float lastTime = 0;
+    private DateTime lastTime;
     private int speedExceedCounter = 0;
     private const int speedThresholdSamples = 50;
+    private int redFlag = 0;
 
     private CustomLSLMarkerStream markerStream;
     private float lastSentAngle = 0;
@@ -53,13 +54,13 @@ public class HeadLocation : MonoBehaviour
         public float StartAngle { get; }
         public Vector3 CurrentPosition { get; }
         public float CurrentAngle { get; }
-        public float CurrentTime { get; }
+        public DateTime CurrentTime { get; }
         public float TimeDifference { get; }
         public float CurrentButterflyAngle { get; }
         public char InFOV { get; }
         public char IsMarker { get; }
-       
-        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, char inFOV, char isMarker, float currentTime, float timeDifference)
+
+        public PositionSampledEventArgs(Vector3 startPosition, float startAngle, Vector3 currentPosition, float currentAngle, float currentButterflyAngle, char inFOV, char isMarker, DateTime currentTime, float timeDifference)
         {
             StartPosition = startPosition;
             StartAngle = startAngle;
@@ -79,9 +80,10 @@ public class HeadLocation : MonoBehaviour
         if (dataInfo != null)
         {
             dataInfo.AskForStartAngle += TakeStartPose;
-            dataInfo.StartToSample += StartSampling;
-            dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
+            //dataInfo.StartToSample += StartSampling;
+            //dataInfo.ButterflyAngleUpdated += UpdateButterflyAngle;
         }
+        mainCamera = Camera.main;
 
         markerStream = FindObjectOfType<CustomLSLMarkerStream>();
         if (markerStream == null)
@@ -116,7 +118,7 @@ public class HeadLocation : MonoBehaviour
     private void StartSampling(object sender, EventArgs e)
     {
         shouldUpdatePosition = true;
-        nextUpdateTime = Time.time;
+        nextUpdateTime = DateTime.Now + TimeSpan.FromSeconds(updateInterval);
         currentPosition2 = Camera.main.transform.position;
         butterHigh = currentPosition2.y;
         ButterHighCalculated?.Invoke(this, new ButterHighEventArgs(butterHigh));
@@ -128,11 +130,16 @@ public class HeadLocation : MonoBehaviour
         {
             startPosition = currentPosition;
             startTime = currentTime;
+
+            int currentMinutes = startTime.Minute;
+            int currentSeconds = startTime.Second;
+            int timeMarker = currentMinutes * 100 + currentSeconds;
+            SendAngleMarker(timeMarker);
             Data.startAngle = currentAngle;
             if (flagCenter < 1)
             {
-                Vector3 currentCenter = Camera.main.transform.position;
-                Vector3 currentRotation = Camera.main.transform.rotation.eulerAngles;
+                Vector3 currentCenter = mainCamera.transform.position;
+                Vector3 currentRotation = mainCamera.transform.rotation.eulerAngles;
 
                 Data.startCenterX = currentCenter.x;
                 Data.startCenterZ = currentCenter.z;
@@ -146,20 +153,12 @@ public class HeadLocation : MonoBehaviour
 
     private void Update()
     {
-        if (shouldUpdatePosition && Time.time >= nextUpdateTime)
+        if (shouldUpdatePosition && DateTime.Now >= nextUpdateTime)
         {
-            currentPosition = Camera.main.transform.forward;
-            Vector3 D1 = new Vector3(0,0,1);
+            currentPosition = mainCamera.transform.forward;
+            Vector3 D1 = new Vector3(0, 0, 1);
             currentAngle = AngleFromVector(D1, currentPosition);
-            currentTime = Time.time;
-            float timeDifference = currentTime - startTime;
-            isMarker = 'X';
-
-            if (Math.Abs(currentButterflyAngle - currentAngle) <= 60)
-            {
-                inFOV = 'V';
-            }
-            else { inFOV = 'X'; }
+            currentTime = DateTime.Now;
 
             if (Mathf.Abs(currentAngle - lastSentAngle) >= 3f)
             {
@@ -168,6 +167,16 @@ public class HeadLocation : MonoBehaviour
                 lastSentAngle = currentAngle;
                 isMarker = 'V';
             }
+
+            nextUpdateTime = currentTime + TimeSpan.FromSeconds(updateInterval);
+            float timeDifference = (float)(currentTime - startTime).TotalSeconds;
+            isMarker = 'X';
+
+            if (Math.Abs(currentButterflyAngle - currentAngle) <= 60)
+            {
+                inFOV = 'V';
+            }
+            else { inFOV = 'X'; }
 
             if (Data.SaveData)
             {
@@ -200,13 +209,12 @@ public class HeadLocation : MonoBehaviour
             }
 
             // Calculate angular velocity
-            float angleDifference = Mathf.Abs(currentAngle - lastAngle);
-            float timeDiff = currentTime - lastTime;
-            float angularVelocity = angleDifference / timeDiff; // Degrees per second
+            float angleDifference = CalculateAngleDifference(currentAngle, lastAngle);
+            float timeDiff = (float)(currentTime - lastTime).TotalSeconds;
+            float angularVelocity = timeDiff > 0f ? angleDifference / timeDiff : 0f; // Degrees per second
 
             // Convert angular velocity to km/h
             //float angularVelocityKmH = angularVelocity * 3600 / 1000;
-            int redFlag = 0;
             if (angularVelocity > 17f)
             {
                 speedExceedCounter++;
@@ -233,10 +241,10 @@ public class HeadLocation : MonoBehaviour
                 }
             }
 
-        lastAngle = currentAngle;
-        lastTime = currentTime;
+            lastAngle = currentAngle;
+            lastTime = currentTime;
+            nextUpdateTime = DateTime.Now + TimeSpan.FromSeconds(updateInterval);
 
-         nextUpdateTime = Time.time + updateInterval;
         }
     }
 
@@ -264,5 +272,13 @@ public class HeadLocation : MonoBehaviour
         {
             markerStream.Write(angle);
         }
+    }
+
+    private float CalculateAngleDifference(float angle1, float angle2)
+    {
+        float difference = Mathf.Abs(angle1 - angle2) % 360;
+        if (difference > 180)
+            difference = 360 - difference;
+        return difference;
     }
 }
