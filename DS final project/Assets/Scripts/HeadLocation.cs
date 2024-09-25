@@ -133,7 +133,8 @@ public class HeadLocation : MonoBehaviour
 
             int currentMinutes = startTime.Minute;
             int currentSeconds = startTime.Second;
-            int timeMarker = currentMinutes * 100 + currentSeconds;
+            int currentMilSeconds = startTime.Millisecond / 10;
+            int timeMarker = currentMinutes * 10000 + currentSeconds * 100 + currentMilSeconds;
             SendAngleMarker(timeMarker);
             Data.startAngle = currentAngle;
             if (flagCenter < 1)

@@ -58,6 +58,10 @@ public class DataTraining : MonoBehaviour
     private bool waitingForEndPosition = true;
     private float butterHigh = 1.2f;
     public long unixStartTime = 0;
+    private int currentMinutes;
+    private int currentSeconds;
+    private int currentMilliseconds;
+    private int timeMarker;
 
     private Vector3 tempStartPosition;
     private float tempElapsedTime;
@@ -136,9 +140,17 @@ public class DataTraining : MonoBehaviour
     void Start()
     {
         startTime = DateTime.Now;
-        int currentMinutes = startTime.Minute;
-        int currentSeconds = startTime.Second;
-        int timeMarker = currentMinutes * 100 + currentSeconds;
+
+        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
+        if (markerStream == null)
+        {
+            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
+        }
+
+        currentMinutes = startTime.Minute;
+        currentSeconds = startTime.Second;
+        currentMilliseconds = startTime.Millisecond / 10;
+        timeMarker = currentMinutes * 10000 + currentSeconds * 100 + currentMilliseconds;
         markerStream.Write(timeMarker);
 
         outputFileName = "Data_Training" + startTime.ToString("yyyy MM dd _ HH mm ss fff") + ".txt";
@@ -166,11 +178,6 @@ public class DataTraining : MonoBehaviour
         location.OnSameLocation += SceneManager2;
         location.ButterHighCalculated += OnButterHighCalculated;
 
-        markerStream = FindObjectOfType<CustomLSLMarkerStream>();
-        if (markerStream == null)
-        {
-            Debug.LogError("CustomLSLMarkerStream component not found in the scene. Please add it to a GameObject.");
-        }
     }
     private void ComponentAnglesOrder(object sender, RandomNubersTraining.AngelsEventArgs e)
     {
@@ -325,7 +332,7 @@ public class DataTraining : MonoBehaviour
         char inFOV = e.InFOV;
         char isMarker = e.IsMarker;
         DateTime currentTimeAndDate = e.CurrentTime;
-        string currentTime = currentTimeAndDate.ToString("HH:mm:ss");
+        string currentTime = currentTimeAndDate.ToString("HH:mm:ss.fff");
         float timeDifference = e.TimeDifference;
         float currentPositionAngleRefButter = currentButterflyAngle - currentPositionAngle;
         float totalTime = (float)(DateTime.Now - startTime).TotalSeconds;
